@@ -57,6 +57,7 @@ public class PdfExtractorController {
 
     private PdfService pdfService;
     private Set<Integer> selectedPages;
+    private List<PageThumbnailPanel> thumbnailPanels;
     private int currentPreviewPage;
     private ImageView currentImageView;
 
@@ -65,6 +66,7 @@ public class PdfExtractorController {
         logger.trace("Initializing PdfExtractorController");
         pdfService = new PdfService();
         selectedPages = new TreeSet<>();
+        thumbnailPanels = new ArrayList<>();
         currentPreviewPage = 0;
         
         setupEventHandlers();
@@ -133,6 +135,7 @@ public class PdfExtractorController {
         logger.debug("Loading page thumbnails for {} pages", document.getPageCount());
         
         pagesListContainer.getChildren().clear();
+        thumbnailPanels.clear();
         
         Task<Void> thumbnailTask = new Task<>() {
             @Override
@@ -147,8 +150,9 @@ public class PdfExtractorController {
                             PageThumbnailPanel panel = new PageThumbnailPanel(
                                     pageIndex + 1,
                                     thumbnail,
-                                    selected -> onPageThumbnailClicked(pageIndex, selected)
+                                    selected -> onPageThumbnailToggled(pageIndex, selected)
                             );
+                            thumbnailPanels.add(panel);
                             // Insert at correct index to maintain order
                             pagesListContainer.getChildren().add(pageIndex, panel);
                             logger.trace("Thumbnail for page {} added to UI at index {}", pageIndex, pageIndex);
@@ -164,9 +168,16 @@ public class PdfExtractorController {
         new Thread(thumbnailTask).start();
     }
 
-    private void onPageThumbnailClicked(int pageIndex, boolean selected) {
-        logger.debug("Page {} thumbnail clicked, selected: {}", pageIndex, selected);
-        updatePreview(pageIndex);
+    private void onPageThumbnailToggled(int pageIndex, boolean selected) {
+        logger.debug("Page {} thumbnail toggled, selected: {}", pageIndex, selected);
+        if (selected) {
+            selectedPages.add(pageIndex);
+            logger.trace("Page {} added to selection", pageIndex);
+        } else {
+            selectedPages.remove(pageIndex);
+            logger.trace("Page {} removed from selection", pageIndex);
+        }
+        updateSelectedPagesList();
     }
 
     private void updatePreview(int pageIndex) {
@@ -323,6 +334,12 @@ public class PdfExtractorController {
         logger.info("User selected all pages");
         int pageCount = pdfService.getCurrentDocument().getPageCount();
         selectedPages.addAll(java.util.stream.IntStream.range(0, pageCount).boxed().collect(Collectors.toSet()));
+        
+        // Update all thumbnail checkboxes
+        for (PageThumbnailPanel panel : thumbnailPanels) {
+            panel.setSelected(true);
+        }
+        
         updateSelectedPagesList();
     }
 
@@ -330,6 +347,12 @@ public class PdfExtractorController {
     private void onDeselectAll() {
         logger.info("User deselected all pages");
         selectedPages.clear();
+        
+        // Update all thumbnail checkboxes
+        for (PageThumbnailPanel panel : thumbnailPanels) {
+            panel.setSelected(false);
+        }
+        
         updateSelectedPagesList();
     }
 
