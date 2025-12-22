@@ -4,25 +4,28 @@ A modular, extensible PDF processing toolkit built with JavaFX and Apache PDFBox
 
 ## Overview
 
-PDF Tools is a desktop application that provides various utilities for PDF manipulation. It starts with a **PDF Extractor** tool that allows users to select and extract specific pages from a PDF file to create a new PDF.
+PDF Tools is a desktop application that provides various utilities for PDF manipulation. It starts with a **PDF
+Extractor** tool that allows users to select and extract specific pages from a PDF file to create a new PDF.
 
 The architecture is designed to be easily extended with new tools (Joiner, Splitter, etc.) without modifying core code.
 
 ## Features
 
 ### PDF Extractor (Implemented ✅)
+
 - Load PDF files
 - Browse pages with thumbnails
 - Preview pages at full resolution
 - Select pages using flexible input format:
-  - Single: `1, 3, 5`
-  - Range: `1-10`
-  - Mixed: `1,3,5-10,15`
+    - Single: `1, 3, 5`
+    - Range: `1-10`
+    - Mixed: `1,3,5-10,15`
 - Export selected pages to new PDF file
 - Real-time feedback and error handling
 - Responsive async operations
 
 ### Planned Tools
+
 - **PDF Joiner** - Merge multiple PDFs
 - **PDF Splitter** - Split PDF by ranges
 - **Image to PDF** - Convert images to PDF
@@ -30,10 +33,12 @@ The architecture is designed to be easily extended with new tools (Joiner, Split
 ## Quick Start
 
 ### Prerequisites
+
 - Java 25+
 - Maven 3.6+
 
 ### Build & Run
+
 ```bash
 # Development mode
 mvn clean javafx:run
@@ -43,6 +48,7 @@ mvn clean compile
 ```
 
 ### Using PDF Extractor
+
 1. Launch application
 2. Click "PDF Extractor" button
 3. Click "Load PDF" and select a file
@@ -54,6 +60,7 @@ mvn clean compile
 ## Architecture
 
 ### Layered Design
+
 ```
 UI Layer (Controllers + FXML)
   ↓
@@ -65,6 +72,7 @@ External Libraries (PDFBox, JavaFX)
 ```
 
 ### Key Principles
+
 - **Separation of Concerns:** UI, business logic, and data are isolated
 - **Service-Oriented:** Reusable PDF operations through PdfService
 - **Async Operations:** Background rendering prevents UI freezing
@@ -113,17 +121,17 @@ pdf-tools/
 
 ## Documentation
 
-| Document | Purpose |
-|----------|---------|
-| **README.md** | Overview (you are here) |
-| **QUICKSTART.md** | How to use the application |
-| **ARCHITECTURE.md** | Detailed design documentation |
-| **DEVELOPER_GUIDE.md** | How to extend and develop |
-| **QUICK_REFERENCE.md** | Handy code snippets |
-| **IMPLEMENTATION_STATUS.md** | What's done, what's next |
-| **VERIFICATION_CHECKLIST.md** | Testing guide |
-| **SUMMARY.md** | Project summary |
-| **FILES_CREATED.md** | Inventory of files |
+| Document                      | Purpose                       |
+|-------------------------------|-------------------------------|
+| **README.md**                 | Overview (you are here)       |
+| **QUICKSTART.md**             | How to use the application    |
+| **ARCHITECTURE.md**           | Detailed design documentation |
+| **DEVELOPER_GUIDE.md**        | How to extend and develop     |
+| **QUICK_REFERENCE.md**        | Handy code snippets           |
+| **IMPLEMENTATION_STATUS.md**  | What's done, what's next      |
+| **VERIFICATION_CHECKLIST.md** | Testing guide                 |
+| **SUMMARY.md**                | Project summary               |
+| **FILES_CREATED.md**          | Inventory of files            |
 
 ## Key Technologies
 
@@ -137,21 +145,25 @@ pdf-tools/
 ## Building the Project
 
 ### Compile
+
 ```bash
 mvn clean compile
 ```
 
 ### Run
+
 ```bash
 mvn clean javafx:run
 ```
 
 ### Build Distribution
+
 ```bash
 mvn clean package javafx:jlink
 ```
 
 ### View Logs
+
 ```bash
 # Real-time logs
 tail -f logs/pdf-tools.log
@@ -171,6 +183,7 @@ The application uses **Logback** with **SLF4J**. All operations are logged at ap
 - **ERROR** - Failures with stack traces
 
 Logs are written to:
+
 - **Console** - Real-time output
 - **File** - `./logs/pdf-tools.log` (rolling, up to 100MB total)
 
@@ -208,6 +221,7 @@ See **DEVELOPER_GUIDE.md** for patterns and examples.
 ## Testing
 
 Run the **VERIFICATION_CHECKLIST.md** to verify:
+
 - Build succeeds
 - Application launches
 - PDF loading works
@@ -218,12 +232,14 @@ Run the **VERIFICATION_CHECKLIST.md** to verify:
 ## Roadmap
 
 ### Current Phase (Complete)
+
 - ✅ Architecture design
 - ✅ PDF Extractor implementation
 - ✅ Comprehensive logging
 - ✅ Documentation
 
 ### Next Phase
+
 - [ ] Build verification
 - [ ] Checkbox selection on thumbnails
 - [ ] Progress indicators
@@ -231,6 +247,7 @@ Run the **VERIFICATION_CHECKLIST.md** to verify:
 - [ ] PDF Splitter tool
 
 ### Future
+
 - Batch operations
 - Recent files manager
 - Drag-and-drop support
@@ -240,28 +257,33 @@ Run the **VERIFICATION_CHECKLIST.md** to verify:
 ## Troubleshooting
 
 ### Build Fails
+
 ```bash
 mvn clean compile -e
 # Check errors in output
 ```
 
 ### Application Won't Start
+
 - Check Java version: `java -version` (needs 25+)
 - Check logs: `tail logs/pdf-tools.log`
 - Try clean rebuild: `mvn clean javafx:run`
 
 ### PDF Won't Load
+
 - Verify file exists and is readable
 - Check it's a valid PDF
 - Look for errors in logs
 
 ### Out of Memory
+
 - Increase heap: `mvn javafx:run -Dexec.args="-Xmx2G"`
 - Try smaller PDFs first
 
 ## Contributing
 
 Contributions welcome! Please:
+
 1. Follow code style (see DEVELOPER_GUIDE.md)
 2. Add comprehensive logging
 3. Update documentation
@@ -277,7 +299,9 @@ Contributions welcome! Please:
 
 ## Summary
 
-PDF Tools is a well-architected, fully documented, and ready-to-extend PDF processing application. The foundation is solid with verbose logging, comprehensive documentation, and an extensible design that makes adding new tools straightforward.
+PDF Tools is a well-architected, fully documented, and ready-to-extend PDF processing application. The foundation is
+solid with verbose logging, comprehensive documentation, and an extensible design that makes adding new tools
+straightforward.
 
 **Current Status:** Implementation complete, ready for testing and verification.
 

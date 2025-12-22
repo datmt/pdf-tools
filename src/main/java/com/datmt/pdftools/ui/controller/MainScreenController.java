@@ -23,14 +23,14 @@ public class MainScreenController {
             FXMLLoader fxmlLoader = new FXMLLoader(
                     getClass().getResource("/com/datmt/pdftools/ui/extractor/pdf-extractor.fxml"));
             Scene scene = new Scene(fxmlLoader.load(), 1400, 800);
-            
+
             Stage stage = new Stage();
             stage.setTitle("PDF Extractor");
             stage.setScene(scene);
             stage.setMinWidth(1400);
             stage.setMinHeight(800);
             stage.show();
-            
+
             logger.info("PDF Extractor window opened");
         } catch (IOException e) {
             logger.error("Failed to load PDF Extractor window", e);

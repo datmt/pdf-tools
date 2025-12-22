@@ -1,6 +1,7 @@
 # Quick Start Guide
 
 ## Prerequisites
+
 - Java 21 or higher
 - Maven 3.6+
 
@@ -13,11 +14,13 @@ mvn clean package
 ## Running
 
 ### Development Mode
+
 ```bash
 mvn clean javafx:run
 ```
 
 ### Building Distribution
+
 ```bash
 mvn clean package javafx:jlink
 ```
@@ -25,38 +28,46 @@ mvn clean package javafx:jlink
 ## Using the PDF Extractor
 
 ### 1. Load a PDF
+
 - Click "PDF Extractor" from the main screen
 - Click "Load PDF" button
 - Select a PDF file
 
 ### 2. Select Pages
+
 **Option A: Input Field**
+
 - Enter page numbers in the right panel input field
 - Format examples:
-  - `1,3,5` - Individual pages
-  - `1-10` - Page range
-  - `1,3,5-10` - Mixed
+    - `1,3,5` - Individual pages
+    - `1-10` - Page range
+    - `1,3,5-10` - Mixed
 - Click "Add"
 
 **Option B: Thumbnail Selection**
+
 - Use "Select All" / "Deselect All" buttons
 - (Checkbox selection on thumbnails to be added)
 
 **Option C: Preview Navigation**
+
 - Click "Previous" / "Next" to browse pages
 - Center panel shows current page preview
 
 ### 3. Review Selection
+
 - Right panel shows all selected pages
 - Click "Remove Selected" or "Clear All" to modify
 
 ### 4. Export
+
 - Click "Browse" to choose output file location
 - Click "Export PDF" to save
 
 ## Logging
 
 Logs are written to:
+
 - **Console:** Real-time output
 - **File:** `./logs/pdf-tools.log` (rolling logs up to 100MB)
 
@@ -97,14 +108,17 @@ See `ARCHITECTURE.md` for detailed design documentation.
 ## Common Issues
 
 ### "PDF file does not exist"
+
 - Check file path is correct
 - Ensure file has read permissions
 
 ### "Invalid page index"
+
 - Check page numbers don't exceed document page count
 - Remember input is 1-based (pages 1 to N)
 
 ### "Out of memory" with large PDFs
+
 - Increase JVM memory: `mvn javafx:run -Dexec.args="-Xmx2G"`
 - Note: Page rendering is done on-demand and cached
 

@@ -33,14 +33,13 @@ import java.util.stream.Collectors;
  */
 public class PdfExtractorController {
     private static final Logger logger = LoggerFactory.getLogger(PdfExtractorController.class);
-
+    Task<Void> currentLoadingTask;
     @FXML
     private Button loadButton;
     @FXML
     private Label fileLabel;
     @FXML
     private Label pageCountLabel;
-
     @FXML
     private VBox pagesListContainer;
     @FXML
@@ -53,7 +52,6 @@ public class PdfExtractorController {
     private Label currentPageLabel;
     @FXML
     private Button prevButton, nextButton;
-
     @FXML
     private VBox selectedPagesList;
     @FXML
@@ -66,7 +64,6 @@ public class PdfExtractorController {
     private Label inputHintLabel;
     @FXML
     private Button removeSelectedButton, clearButton;
-
     @FXML
     private TextField outputFileField;
     @FXML
@@ -75,7 +72,6 @@ public class PdfExtractorController {
     private Button selectAllButton, deselectAllButton;
     @FXML
     private Label notificationLabel;
-
     private PdfService pdfService;
     private Set<Integer> selectedPages;
     private List<PageThumbnailPanel> thumbnailPanels;
@@ -151,8 +147,6 @@ public class PdfExtractorController {
 
         new Thread(loadTask).start();
     }
-
-    Task<Void> currentLoadingTask;
 
     public void loadPageThumbnails(PdfDocument document, Pane container, List<PageThumbnailPanel> trackerList) {
         // 1. Cancel any previous loading task to prevent race conditions

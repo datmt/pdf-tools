@@ -3,69 +3,71 @@
 ## Documentation Files
 
 1. **ARCHITECTURE.md** (850 lines)
-   - Complete architecture documentation
-   - Design patterns and decisions
-   - Extending the application guide
-   - Thread safety and error handling
+    - Complete architecture documentation
+    - Design patterns and decisions
+    - Extending the application guide
+    - Thread safety and error handling
 
 2. **QUICKSTART.md** (100 lines)
-   - Getting started guide
-   - Build and run instructions
-   - Using the PDF Extractor
-   - Troubleshooting
+    - Getting started guide
+    - Build and run instructions
+    - Using the PDF Extractor
+    - Troubleshooting
 
 3. **IMPLEMENTATION_STATUS.md** (200 lines)
-   - Completion checklist
-   - Known limitations
-   - Testing checklist
-   - Next steps
+    - Completion checklist
+    - Known limitations
+    - Testing checklist
+    - Next steps
 
 4. **SUMMARY.md** (350 lines)
-   - Executive summary
-   - What was built
-   - Key decisions
-   - Code statistics
+    - Executive summary
+    - What was built
+    - Key decisions
+    - Code statistics
 
 5. **DEVELOPER_GUIDE.md** (600 lines)
-   - Getting started for developers
-   - Code organization
-   - Adding new tools
-   - Logging best practices
-   - Common mistakes
+    - Getting started for developers
+    - Code organization
+    - Adding new tools
+    - Logging best practices
+    - Common mistakes
 
 6. **FILES_CREATED.md** (This file)
-   - Index of all created files
+    - Index of all created files
 
 ## Configuration Files
 
 7. **pom.xml** (Modified)
-   - Added PDFBox 3.0.1
-   - Added Logback 1.5.3 and SLF4J 2.0.11
-   - Added javafx-swing 21.0.6
-   - Updated main class to MainApplication
+    - Added PDFBox 3.0.1
+    - Added Logback 1.5.3 and SLF4J 2.0.11
+    - Added javafx-swing 21.0.6
+    - Updated main class to MainApplication
 
 8. **src/main/java/module-info.java** (Modified)
-   - Added javafx.swing requirement
-   - Added PDFBox module requirements
-   - Added Logback/SLF4J requirements
-   - Added opens and exports for UI packages
+    - Added javafx.swing requirement
+    - Added PDFBox module requirements
+    - Added Logback/SLF4J requirements
+    - Added opens and exports for UI packages
 
 9. **src/main/resources/logback.xml** (New)
-   - Console and file appenders
-   - Rolling file policy (10MB per file, 100MB total)
-   - TRACE level for application code
-   - DEBUG level for PDFBox
-   - INFO level for root logger
+    - Console and file appenders
+    - Rolling file policy (10MB per file, 100MB total)
+    - TRACE level for application code
+    - DEBUG level for PDFBox
+    - INFO level for root logger
 
 ## Java Source Files
 
 ### Model Layer
+
 10. **src/main/java/com/datmt/pdftools/model/PdfDocument.java** (70 lines)
     - Represents loaded PDF document
     - Page image caching
     - Metadata storage (source file, page count)
 
 ### Service Layer
+
 11. **src/main/java/com/datmt/pdftools/service/PdfService.java** (160 lines)
     - Main facade for PDF operations
     - Orchestrates all PDF functionality
@@ -89,6 +91,7 @@
     - Gets page dimensions
 
 ### Application Entry Point
+
 15. **src/main/java/com/datmt/pdftools/MainApplication.java** (40 lines)
     - JavaFX application entry point
     - Loads main-screen.fxml
@@ -96,6 +99,7 @@
     - Handles application shutdown
 
 ### UI Layer - Main Screen
+
 16. **src/main/java/com/datmt/pdftools/ui/controller/MainScreenController.java** (40 lines)
     - Controls main tool selection screen
     - Handles button clicks
@@ -109,6 +113,7 @@
     - Responsive layout
 
 ### UI Layer - PDF Extractor
+
 18. **src/main/java/com/datmt/pdftools/ui/extractor/PdfExtractorController.java** (410 lines)
     - Complete PDF Extractor functionality
     - 3-panel layout management
@@ -139,16 +144,19 @@
 ## Statistics
 
 ### Code Files
+
 - **Java Classes:** 12
 - **FXML Layouts:** 2
 - **Configuration:** 1 (logback.xml)
 - **Total Lines of Code:** ~2000
 
 ### Documentation
+
 - **Markdown Files:** 6
 - **Total Documentation Lines:** 3000+
 
 ### Dependencies
+
 - **New Maven Dependencies:** 3 major (PDFBox, Logback, SLF4J)
 - **JavaFX Modules Required:** 4 (controls, fxml, swing, rendering)
 - **PDFBox Modules Required:** 4 (io, pdfparser, pdmodel, rendering)
@@ -156,6 +164,7 @@
 ## Removed/Obsolete Files (To Delete)
 
 These files are no longer used and should be removed:
+
 - src/main/java/com/datmt/pdftools/HelloApplication.java
 - src/main/java/com/datmt/pdftools/HelloController.java
 - src/main/java/com/datmt/pdftools/Launcher.java
@@ -235,11 +244,11 @@ pdf-tools/
    ```
 
 4. **Implementation Tasks** (See IMPLEMENTATION_STATUS.md)
-   - [ ] Verify build passes
-   - [ ] Test PDF loading and extraction
-   - [ ] Implement checkbox selection
-   - [ ] Add progress indicators
-   - [ ] Test with sample PDFs
+    - [ ] Verify build passes
+    - [ ] Test PDF loading and extraction
+    - [ ] Implement checkbox selection
+    - [ ] Add progress indicators
+    - [ ] Test with sample PDFs
 
 ## File Checksums (for reference)
 

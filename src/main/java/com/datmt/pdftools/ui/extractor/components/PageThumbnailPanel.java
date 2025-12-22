@@ -30,9 +30,9 @@ public class PageThumbnailPanel extends VBox {
      */
     public PageThumbnailPanel(int pageNumber, Image thumbnail, Consumer<Boolean> onSelected) {
         logger.trace("Creating thumbnail panel for page {}", pageNumber);
-        
+
         this.pageNumber = pageNumber;
-        
+
         setSpacing(5);
         setAlignment(Pos.TOP_CENTER);
         setStyle("-fx-border-color: #e0e0e0; -fx-border-radius: 3; -fx-padding: 5;");

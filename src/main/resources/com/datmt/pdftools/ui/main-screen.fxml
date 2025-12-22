@@ -1,33 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Text?>
-<?import javafx.scene.text.Font?>
-
-<BorderPane xmlns="http://javafx.com/javafx"
-            xmlns:fx="http://javafx.com/fxml"
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            xmlns="http://javafx.com/javafx"
             fx:controller="com.datmt.pdftools.ui.controller.MainScreenController"
             style="-fx-font-family: 'Segoe UI';">
-    
+
     <center>
         <VBox spacing="30" alignment="CENTER" style="-fx-padding: 40;">
             <Text text="PDF Tools" style="-fx-font-size: 48; -fx-font-weight: bold;"/>
             <Text text="Select a tool to get started" style="-fx-font-size: 18; -fx-fill: #666666;"/>
-            
+
             <HBox spacing="20" alignment="CENTER">
-                <Button fx:id="extractorButton" text="PDF Extractor" 
+                <Button fx:id="extractorButton" text="PDF Extractor"
                         style="-fx-font-size: 14; -fx-padding: 15 40; -fx-min-width: 200;"
                         onAction="#onExtractorClicked"/>
-                
-                <Button text="PDF Joiner (Coming Soon)" 
+
+                <Button text="PDF Joiner (Coming Soon)"
                         style="-fx-font-size: 14; -fx-padding: 15 40; -fx-min-width: 200;"
                         disable="true"/>
-                
-                <Button text="PDF Splitter (Coming Soon)" 
+
+                <Button text="PDF Splitter (Coming Soon)"
                         style="-fx-font-size: 14; -fx-padding: 15 40; -fx-min-width: 200;"
                         disable="true"/>
             </HBox>

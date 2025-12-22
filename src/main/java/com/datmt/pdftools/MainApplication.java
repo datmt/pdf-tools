@@ -15,6 +15,11 @@ import java.io.IOException;
 public class MainApplication extends Application {
     private static final Logger logger = LoggerFactory.getLogger(MainApplication.class);
 
+    public static void main(String[] args) {
+        logger.trace("main() method called");
+        launch();
+    }
+
     @Override
     public void start(Stage stage) throws IOException {
         logger.info("=== PDF Tools Application Starting ===");
@@ -24,13 +29,13 @@ public class MainApplication extends Application {
         try {
             FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/datmt/pdftools/ui/main-screen.fxml"));
             Scene scene = new Scene(fxmlLoader.load(), 1000, 700);
-            
+
             stage.setTitle("PDF Tools");
             stage.setScene(scene);
-            
+
             logger.info("Main window initialized");
             stage.show();
-            
+
             stage.setOnCloseRequest(event -> {
                 logger.info("Application closing");
             });
@@ -38,10 +43,5 @@ public class MainApplication extends Application {
             logger.error("Failed to start application", e);
             throw e;
         }
-    }
-
-    public static void main(String[] args) {
-        logger.trace("main() method called");
-        launch();
     }
 }

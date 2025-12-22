@@ -7,51 +7,56 @@ A modular, extensible **PDF processing toolkit** with JavaFX UI and a complete f
 ### Key Components
 
 1. **Layered Architecture**
-   - **Model:** PdfDocument with page caching
-   - **Service:** PdfService (facade) + specialized loaders/extractors/renderers
-   - **UI:** Controllers + FXML layouts + reusable components
+    - **Model:** PdfDocument with page caching
+    - **Service:** PdfService (facade) + specialized loaders/extractors/renderers
+    - **UI:** Controllers + FXML layouts + reusable components
 
 2. **Main Application**
-   - Entry point with tool selection screen
-   - Architecture supports unlimited tool extensions
-   - Each tool is isolated in its own package
+    - Entry point with tool selection screen
+    - Architecture supports unlimited tool extensions
+    - Each tool is isolated in its own package
 
 3. **PDF Extractor Tool** (Complete)
-   - 3-panel layout: Pages | Preview | Selection
-   - Page selection: individual, ranges, mixed (e.g., "1,3,5-10")
-   - Page thumbnails with selection indicators
-   - Live preview with navigation
-   - Export to new PDF with selected pages
-   - Asynchronous rendering and file operations
-   - Comprehensive error handling and user feedback
+    - 3-panel layout: Pages | Preview | Selection
+    - Page selection: individual, ranges, mixed (e.g., "1,3,5-10")
+    - Page thumbnails with selection indicators
+    - Live preview with navigation
+    - Export to new PDF with selected pages
+    - Asynchronous rendering and file operations
+    - Comprehensive error handling and user feedback
 
 4. **Logging System**
-   - Logback with rolling file appenders
-   - TRACE-level logging for application code
-   - Console + file output (logs/ directory)
-   - Per-class loggers throughout
+    - Logback with rolling file appenders
+    - TRACE-level logging for application code
+    - Console + file output (logs/ directory)
+    - Per-class loggers throughout
 
 ## Architecture Highlights
 
 ### Extensibility
+
 Adding a new tool requires:
+
 - Create `ui/mytool/` package
 - Add FXML layout and controller
 - Add button to MainScreenController
 - Reuse PdfService for common operations
 
 ### Separation of Concerns
+
 ```
 Controllers (UI logic) → PdfService (orchestration) → Loaders/Extractors/Renderers (implementation)
 ```
 
 ### Threading Model
+
 - All blocking operations use JavaFX `Task`
 - PDF loading, rendering, and extraction happen on background threads
 - UI updates use `Platform.runLater()`
 - No UI blocking even with large files
 
 ### Error Handling
+
 - Exceptions logged at appropriate levels
 - User-friendly dialogs for errors
 - Input validation at UI layer
@@ -108,23 +113,27 @@ pdf-tools/
 ## Key Design Decisions
 
 ### 1. Simple Over Complex
+
 - Single PdfService entry point vs multiple specialized services
 - Synchronous file I/O vs custom caching layers
 - Basic component composition vs framework patterns
 
 ### 2. User Experience
+
 - 3-panel layout maximizes visibility at all stages
 - Real-time preview with large live view area
 - Page input supports flexible formats (1, 1-5, 1,3,5-7)
 - Immediate visual feedback of selections
 
 ### 3. Code Maintainability
+
 - Verbose logging enables debugging without stepping through code
 - Clear package structure guides where to add new code
 - Controllers are "thin" - delegate to services
 - Reusable components (PageThumbnailPanel) reduce duplication
 
 ### 4. Extensibility
+
 - New tools don't modify existing code
 - Tools share PdfService for common operations
 - UI components are composable (PageThumbnailPanel + custom layout)
@@ -167,12 +176,14 @@ logger.error("Failed to load PDF", exception);
 ## What Needs Implementation
 
 **High Priority (Before Release):**
+
 - [ ] Build test: `mvn clean compile`
 - [ ] Checkbox selection on thumbnails (UI created, logic not wired)
 - [ ] "Remove Selected" button functionality
 - [ ] Progress indicator for long operations
 
 **Next Phase:**
+
 - [ ] PDF Joiner tool (merge multiple files)
 - [ ] PDF Splitter tool (split by ranges)
 - [ ] Concurrent thumbnail rendering
@@ -181,11 +192,13 @@ logger.error("Failed to load PDF", exception);
 ## Getting Started
 
 ### Build
+
 ```bash
 mvn clean javafx:run
 ```
 
 ### Test Workflow
+
 1. Start application
 2. Click "PDF Extractor"
 3. Load a PDF file (10+ pages recommended)
@@ -196,20 +209,21 @@ mvn clean javafx:run
 8. Check logs: `tail -f logs/pdf-tools.log`
 
 ### Expected Output
+
 - New PDF with pages 1-5
 - Verbose log showing all operations
 - No errors or exceptions
 
 ## Code Statistics
 
-| Metric | Count |
-|--------|-------|
-| Java Classes | 12 |
-| FXML Files | 2 |
-| Service Methods | 15+ |
-| Logging Statements | 100+ |
-| Lines of Code | ~2000 |
-| Lines of Documentation | 500+ |
+| Metric                 | Count |
+|------------------------|-------|
+| Java Classes           | 12    |
+| FXML Files             | 2     |
+| Service Methods        | 15+   |
+| Logging Statements     | 100+  |
+| Lines of Code          | ~2000 |
+| Lines of Documentation | 500+  |
 
 ## Why This Approach
 
@@ -240,21 +254,25 @@ Before considering "complete":
 Once framework is proven:
 
 **Joiner Tool**
+
 ```
 [Select Files] → [Arrange Pages] → [Merge]
 ```
 
 **Splitter Tool**
+
 ```
 [Load PDF] → [Define Ranges] → [Split to Multiple Files]
 ```
 
 **Converter Tool**
+
 ```
 [Load Images] → [Arrange] → [Convert to PDF]
 ```
 
 All would reuse:
+
 - MainScreenController.onNewToolClicked()
 - PdfService methods
 - PageThumbnailPanel component
@@ -262,6 +280,9 @@ All would reuse:
 
 ## Conclusion
 
-The foundation is complete and ready for testing. The architecture supports adding unlimited tools without modifying core code. All operations are logged verbosely, making it easy to debug issues or understand program flow. The PDF Extractor tool is fully functional with a clean, intuitive 3-panel interface.
+The foundation is complete and ready for testing. The architecture supports adding unlimited tools without modifying
+core code. All operations are logged verbosely, making it easy to debug issues or understand program flow. The PDF
+Extractor tool is fully functional with a clean, intuitive 3-panel interface.
 
-Next steps: Build verification, fix any compilation errors, test with sample PDFs, then implement remaining features from the To Do list.
+Next steps: Build verification, fix any compilation errors, test with sample PDFs, then implement remaining features
+from the To Do list.

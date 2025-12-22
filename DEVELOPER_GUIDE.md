@@ -3,6 +3,7 @@
 ## Project Overview
 
 PDF Tools is a modular JavaFX application for PDF processing. It features:
+
 - **Tool-based architecture** - Easy to add new tools
 - **Service-oriented design** - Reusable PDF operations
 - **Verbose logging** - Comprehensive debugging information
@@ -11,12 +12,14 @@ PDF Tools is a modular JavaFX application for PDF processing. It features:
 ## Getting Started
 
 ### Prerequisites
+
 ```bash
 java -version          # Java 25+
 mvn -version          # Maven 3.6+
 ```
 
 ### First Build
+
 ```bash
 cd pdf-tools
 mvn clean compile     # Verify dependencies
@@ -24,6 +27,7 @@ mvn clean javafx:run  # Run the application
 ```
 
 ### IDE Setup
+
 - **IntelliJ IDEA:** Open as Maven project
 - **Eclipse:** Import as Maven project
 - **VS Code:** Install Extension Pack for Java
@@ -35,32 +39,44 @@ mvn clean javafx:run  # Run the application
 All PDF operations go here. Create new services for new operations.
 
 #### PdfService (Facade)
+
 ```java
 // Entry point for all PDF operations
 pdfService.loadPdf(file)                    // PdfDocument
-pdfService.renderPage(pageIndex)            // Image
-pdfService.extractPages(indices, output)    // void
+pdfService.
+
+renderPage(pageIndex)            // Image
+pdfService.
+
+extractPages(indices, output)    // void
 ```
 
 **When to add methods:**
+
 - New general-purpose PDF operation
 - Used by multiple controllers
 - Example: `rotatePage(index, degrees)`
 
 #### Specialized Services
+
 ```java
-PdfLoader       → File I/O
-PdfExtractor    → Page operations
-PdfRenderService → Image rendering
+PdfLoader       →
+File I/O
+PdfExtractor    →
+Page operations
+PdfRenderService →
+Image rendering
 ```
 
 **When to create new service:**
+
 - Large cohesive group of related operations
 - Example: `PdfMerger` for joining operations
 
 ### Controller Layer (`com.datmt.pdftools.ui`)
 
 Controller responsibilities:
+
 1. Wire FXML UI elements
 2. Handle user events
 3. Call PdfService methods
@@ -68,6 +84,7 @@ Controller responsibilities:
 5. Show user feedback (dialogs)
 
 #### Pattern: Async Operations
+
 ```java
 Task<T> task = new Task<>() {
     @Override
@@ -91,6 +108,7 @@ new Thread(task).start();
 ```
 
 #### Pattern: Input Validation
+
 ```java
 @FXML
 private void onUserInput() {
@@ -117,12 +135,14 @@ private void onUserInput() {
 Naming: `lowercase-with-dashes.fxml`
 
 **Each FXML file should:**
+
 1. Reference correct controller class
 2. Set `fx:id` on elements that code accesses
 3. Wire event handlers with `onAction="#methodName"`
 4. Use meaningful layout hierarchy (VBox, HBox, etc.)
 
 Example:
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.*?>
@@ -144,20 +164,24 @@ Example:
 ### Model Layer (`com.datmt.pdftools.model`)
 
 **Rules:**
+
 1. No business logic - just data
 2. No dependencies on services or UI
 3. One class per entity type
 
 Current:
+
 - `PdfDocument` - Wrapper for PDDocument with caching
 
 Future:
+
 - `ExtractionConfig` - Configuration for operations
 - `ExportSettings` - User preferences
 
 ## Adding a New Tool
 
 ### Step 1: Create Package Structure
+
 ```
 src/main/java/com/datmt/pdftools/ui/mytool/
 ├── MyToolController.java
@@ -166,6 +190,7 @@ src/main/java/com/datmt/pdftools/ui/mytool/
 ```
 
 ### Step 2: Create FXML Layout
+
 ```xml
 <!-- src/main/resources/com/datmt/pdftools/ui/mytool/my-tool.fxml -->
 <?xml version="1.0" encoding="UTF-8"?>
@@ -182,6 +207,7 @@ src/main/java/com/datmt/pdftools/ui/mytool/
 ```
 
 ### Step 3: Create Controller
+
 ```java
 package com.datmt.pdftools.ui.mytool;
 
@@ -204,6 +230,7 @@ public class MyToolController {
 ```
 
 ### Step 4: Add Button to MainScreenController
+
 ```java
 @FXML
 private void onMyToolClicked() {
@@ -224,6 +251,7 @@ private void onMyToolClicked() {
 ```
 
 ### Step 5: Update Module Info
+
 ```java
 opens com.datmt.pdftools.ui.mytool to javafx.fxml;
 exports com.datmt.pdftools.ui.mytool;
@@ -232,6 +260,7 @@ exports com.datmt.pdftools.ui.mytool;
 ## Adding New PDF Operations
 
 ### Option 1: Add to PdfService
+
 For small operations:
 
 ```java
@@ -246,6 +275,7 @@ public void myOperation(int pageIndex, File output) throws IOException {
 ```
 
 ### Option 2: Create Specialized Service
+
 For larger related operations:
 
 ```java
@@ -266,6 +296,7 @@ public class PdfWatermarker {
 ```
 
 Then add to PdfService:
+
 ```java
 private PdfWatermarker watermarker = new PdfWatermarker();
 
@@ -281,22 +312,24 @@ public void addWatermark(String text, File output) throws IOException {
 
 ### Log Levels
 
-| Level | Usage | Example |
-|-------|-------|---------|
-| TRACE | Detailed flow, low-level details | Parsing inputs, loop iterations |
-| DEBUG | Step-by-step operations, state changes | Rendering page 5, loading service |
-| INFO | Important events, user actions | File saved, PDF loaded, operation completed |
-| WARN | Unexpected but recoverable | Invalid input, deprecated API |
-| ERROR | Failures that affect functionality | File not found, IO error |
+| Level | Usage                                  | Example                                     |
+|-------|----------------------------------------|---------------------------------------------|
+| TRACE | Detailed flow, low-level details       | Parsing inputs, loop iterations             |
+| DEBUG | Step-by-step operations, state changes | Rendering page 5, loading service           |
+| INFO  | Important events, user actions         | File saved, PDF loaded, operation completed |
+| WARN  | Unexpected but recoverable             | Invalid input, deprecated API               |
+| ERROR | Failures that affect functionality     | File not found, IO error                    |
 
 ### Logging Patterns
 
 **Method entry (TRACE):**
+
 ```java
 logger.trace("Parsing page input: {}", input);
 ```
 
 **Validation failures (WARN):**
+
 ```java
 if (pageIndex < 0) {
     logger.warn("Invalid page index: {}", pageIndex);
@@ -305,12 +338,14 @@ if (pageIndex < 0) {
 ```
 
 **Success/completion (INFO):**
+
 ```java
 logger.info("Successfully extracted {} pages to: {}", 
     pageIndices.size(), outputFile.getAbsolutePath());
 ```
 
 **Exceptions (ERROR):**
+
 ```java
 catch (IOException e) {
     logger.error("Failed to load PDF: {}", filePath, e);
@@ -321,6 +356,7 @@ catch (IOException e) {
 ### Multi-line Context
 
 For complex operations, log the state:
+
 ```java
 logger.debug("Starting extract operation");
 logger.debug("  Source: {}", sourceFile.getName());
@@ -333,6 +369,7 @@ logger.info("Extraction completed successfully");
 ## Testing Approach
 
 ### Unit Testing Services
+
 Services can be tested independently:
 
 ```java
@@ -355,9 +392,11 @@ public class PdfExtractorTest {
 ```
 
 ### Integration Testing Controllers
+
 Load FXML and verify UI behavior.
 
 ### Manual Testing
+
 1. Load various PDF sizes
 2. Test edge cases (1 page, 100 pages)
 3. Verify error handling
@@ -366,20 +405,23 @@ Load FXML and verify UI behavior.
 ## Performance Considerations
 
 ### Page Rendering
+
 - Happens on background thread
 - Results cached in PdfDocument
 - Thumbnail (72 DPI) vs full (150 DPI)
 - Use `SwingFXUtils.toFXImage()` for conversion
 
 ### Memory Usage
+
 - PDFBox keeps entire document in memory
 - Page images cached but can be cleared
 - For large PDFs (100+ pages), consider:
-  - Lazy thumbnail loading
-  - Cache eviction strategy
-  - Streaming extraction
+    - Lazy thumbnail loading
+    - Cache eviction strategy
+    - Streaming extraction
 
 ### Concurrency
+
 - Each window has own PdfService instance
 - Operations use JavaFX Task for threading
 - No shared mutable state
@@ -387,13 +429,18 @@ Load FXML and verify UI behavior.
 ## Common Mistakes
 
 ### 1. Blocking UI Thread
+
 **Wrong:**
+
 ```java
 Image image = pdfService.renderPage(0);  // Blocks!
-imageView.setImage(image);
+imageView.
+
+setImage(image);
 ```
 
 **Right:**
+
 ```java
 Task<Image> task = new Task<>() {
     @Override
@@ -401,53 +448,80 @@ Task<Image> task = new Task<>() {
         return pdfService.renderPage(0);
     }
 };
-task.setOnSucceeded(e -> imageView.setImage(task.getValue()));
-new Thread(task).start();
+task.
+
+setOnSucceeded(e ->imageView.
+
+setImage(task.getValue()));
+        new
+
+Thread(task).
+
+start();
 ```
 
 ### 2. Not Handling Exceptions
+
 **Wrong:**
+
 ```java
-try {
-    pdfService.extractPages(pages, file);
-} catch (IOException e) {
-    // Silently ignore!
-}
+try{
+        pdfService.extractPages(pages, file);
+}catch(
+IOException e){
+        // Silently ignore!
+        }
 ```
 
 **Right:**
+
 ```java
-try {
-    pdfService.extractPages(pages, file);
-} catch (IOException e) {
-    logger.error("Extraction failed", e);
-    showError("Export Failed", e.getMessage());
-}
+try{
+        pdfService.extractPages(pages, file);
+}catch(
+IOException e){
+        logger.
+
+error("Extraction failed",e);
+
+showError("Export Failed",e.getMessage());
+        }
 ```
 
 ### 3. Missing Null Checks
+
 **Wrong:**
+
 ```java
 pdfService.extractPages(pages, file);  // What if no document loaded?
 ```
 
 **Right:**
+
 ```java
-if (!pdfService.isDocumentLoaded()) {
-    logger.warn("No document loaded for extraction");
-    showWarning("No Document", "Please load a PDF first");
+if(!pdfService.isDocumentLoaded()){
+        logger.
+
+warn("No document loaded for extraction");
+
+showWarning("No Document","Please load a PDF first");
     return;
-}
-pdfService.extractPages(pages, file);
+            }
+            pdfService.
+
+extractPages(pages, file);
 ```
 
 ### 4. Hard-Coded Values
+
 **Wrong:**
+
 ```java
 double[] dims = {595, 842};  // A4?
 ```
 
 **Right:**
+
 ```java
 double[] dims = pdfService.getPageDimensions(pageIndex);
 ```
@@ -455,23 +529,27 @@ double[] dims = pdfService.getPageDimensions(pageIndex);
 ## Building and Debugging
 
 ### Build with Details
+
 ```bash
 mvn clean compile -X              # Verbose
 mvn clean javafx:run -e           # Show errors
 ```
 
 ### Running with Different Memory
+
 ```bash
 mvn javafx:run -Dexec.args="-Xmx2G"
 ```
 
 ### Checking Logs
+
 ```bash
 tail -f logs/pdf-tools.log        # Follow log
 grep ERROR logs/pdf-tools.log      # Find errors
 ```
 
 ### Debug Mode (with IDE)
+
 1. Set breakpoints in code
 2. Run with debug configuration
 3. Step through code
@@ -508,21 +586,25 @@ Before committing:
 ## Quick Reference
 
 ### Create New Tool
+
 ```
 ui/toolname/ → Create controller → Create FXML → Add to MainScreen
 ```
 
 ### Add PDF Operation
+
 ```
 service/PdfNewThing.java → Inject to PdfService → Call from controller
 ```
 
 ### Debug Issue
+
 ```
 Enable logging → Run operation → Check logs/pdf-tools.log → Add breakpoints
 ```
 
 ### Run Application
+
 ```
 mvn clean javafx:run
 ```

@@ -3,15 +3,18 @@
 ## Completed ✓
 
 ### Foundation
+
 - [x] Maven project setup with all dependencies (PDFBox, JavaFX, Logback)
 - [x] Module configuration (module-info.java) with proper exports/opens
 - [x] Logback configuration with TRACE level for application, DEBUG for PDFBox
 - [x] Directory structure following layered architecture
 
 ### Model Layer
+
 - [x] `PdfDocument` class with caching support
 
 ### Service Layer
+
 - [x] `PdfService` - Main facade orchestrating all PDF operations
 - [x] `PdfLoader` - PDF file loading with verbose logging
 - [x] `PdfExtractor` - Single page, range, and set extraction with logging
@@ -19,34 +22,38 @@
 - All methods have comprehensive error handling and logging at appropriate levels
 
 ### UI Layer - Main Screen
+
 - [x] `MainApplication` - Entry point with proper JavaFX initialization
 - [x] `main-screen.fxml` - Tool selection layout
 - [x] `MainScreenController` - Controller for tool selection
 - [x] Button to launch PDF Extractor (others disabled as "Coming Soon")
 
 ### UI Layer - PDF Extractor
+
 - [x] `pdf-extractor.fxml` - Complete 3-panel layout:
-  - Left: Pages list with thumbnails
-  - Center: Page preview with navigation
-  - Right: Selected pages and export options
+    - Left: Pages list with thumbnails
+    - Center: Page preview with navigation
+    - Right: Selected pages and export options
 - [x] `PdfExtractorController` - Full implementation with:
-  - PDF file loading with background task
-  - Page thumbnail generation and display
-  - Page preview with navigation (< Prev | Next >)
-  - Page selection input (single, range, mixed)
-  - Visual feedback of selected pages
-  - Export to file with file browser
-  - Error/warning/info dialogs
-  - Verbose logging throughout
+    - PDF file loading with background task
+    - Page thumbnail generation and display
+    - Page preview with navigation (< Prev | Next >)
+    - Page selection input (single, range, mixed)
+    - Visual feedback of selected pages
+    - Export to file with file browser
+    - Error/warning/info dialogs
+    - Verbose logging throughout
 - [x] `PageThumbnailPanel` - Reusable component for page display
 
 ### Logging
+
 - [x] Comprehensive logging at TRACE, DEBUG, INFO, WARN, ERROR levels
 - [x] Rolling file appender (logs/pdf-tools.log)
 - [x] Console appender for real-time feedback
 - [x] Per-class loggers following naming convention
 
 ### Documentation
+
 - [x] ARCHITECTURE.md - Detailed architecture guide
 - [x] QUICKSTART.md - Usage guide
 - [x] IMPLEMENTATION_STATUS.md - This file
@@ -58,32 +65,35 @@ None at this time.
 ## To Do 📋
 
 ### High Priority (Before First Release)
+
 - [ ] Build verification: `mvn clean compile` should pass without errors
 - [ ] Remove obsolete files:
-  - [ ] `HelloApplication.java`
-  - [ ] `HelloController.java`
-  - [ ] `Launcher.java`
-  - [ ] `hello-view.fxml`
+    - [ ] `HelloApplication.java`
+    - [ ] `HelloController.java`
+    - [ ] `Launcher.java`
+    - [ ] `hello-view.fxml`
 - [ ] Implement checkbox selection on page thumbnails
 - [ ] Implement "Remove Selected" button functionality
 - [ ] Test full extractor workflow with sample PDFs
 - [ ] Add progress indicator for long operations (loading, rendering, export)
 
 ### Medium Priority (Next Phase)
+
 - [ ] Implement PDF Joiner tool
-  - File selection for multiple PDFs
-  - Page-level selection from each file
-  - Merge order customization
-  - Reuse thumbnail component
+    - File selection for multiple PDFs
+    - Page-level selection from each file
+    - Merge order customization
+    - Reuse thumbnail component
 - [ ] Implement PDF Splitter tool
-  - Split by page count
-  - Split by page ranges
-  - Batch operations
+    - Split by page count
+    - Split by page ranges
+    - Batch operations
 - [ ] Add recent files manager (preferences)
 - [ ] Add window sizing preferences
 - [ ] Implement concurrent page thumbnail rendering (multiple threads)
 
 ### Low Priority (Future Enhancements)
+
 - [ ] Image to PDF tool
 - [ ] PDF page rotation tool
 - [ ] PDF watermark tool
@@ -95,6 +105,7 @@ None at this time.
 ## Build Instructions
 
 ### Current Status
+
 Ready for compilation but untested. Before running:
 
 1. Ensure Java 25+ is installed:
@@ -113,6 +124,7 @@ Ready for compilation but untested. Before running:
    ```
 
 ### Expected Behavior
+
 - Main window opens with "PDF Tools" title
 - Tool selection screen shows with "PDF Extractor" button active
 - Clicking "PDF Extractor" opens new window with 3-panel layout
