@@ -22,6 +22,8 @@ public class PageThumbnailPanel extends VBox {
     private CheckBox selectCheckBox;
     private int pageNumber;
     private Consumer<Void> onThumbnailClicked;
+    private static final String BORDER_UNSELECTED = "-fx-border-color: #e0e0e0; -fx-border-radius: 3; -fx-padding: 5; -fx-cursor: hand;";
+    private static final String BORDER_SELECTED = "-fx-border-color: #2196F3; -fx-border-radius: 3; -fx-padding: 5; -fx-border-width: 2; -fx-cursor: hand;";
 
     /**
      * Create a page thumbnail panel.
@@ -50,7 +52,7 @@ public class PageThumbnailPanel extends VBox {
 
         setSpacing(5);
         setAlignment(Pos.TOP_CENTER);
-        setStyle("-fx-border-color: #e0e0e0; -fx-border-radius: 3; -fx-padding: 5; -fx-cursor: hand;");
+        setStyle(BORDER_UNSELECTED);
 
         // Thumbnail image
         ImageView imageView = new ImageView(thumbnail);
@@ -94,5 +96,9 @@ public class PageThumbnailPanel extends VBox {
 
     public int getPageNumber() {
         return pageNumber;
+    }
+
+    public void setPreviewSelected(boolean selected) {
+        setStyle(selected ? BORDER_SELECTED : BORDER_UNSELECTED);
     }
 }

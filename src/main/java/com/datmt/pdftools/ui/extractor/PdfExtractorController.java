@@ -25,6 +25,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -77,7 +82,9 @@ public class PdfExtractorController {
     private List<PageThumbnailPanel> thumbnailPanels;
     private int currentPreviewPage;
     private ImageView currentImageView;
-
+    private PageThumbnailPanel currentSelectedPanel;
+    private final ExecutorService renderExecutor = Executors.newFixedThreadPool(4); // Limit threads to save RAM
+    private final AtomicReference<Object> currentSessionId = new AtomicReference<>(); // Token to track active request
     @FXML
     public void initialize() {
         logger.trace("Initializing PdfExtractorController");
@@ -147,7 +154,83 @@ public class PdfExtractorController {
 
         new Thread(loadTask).start();
     }
+    public void loadPageThumbnailsParallel(PdfDocument document, Pane container, List<PageThumbnailPanel> trackerList) {
+        // 1. Generate a unique ID for this specific loading session
+        Object mySessionId = new Object();
+        currentSessionId.set(mySessionId);
 
+        logger.debug("Starting parallel thumbnail generation. Session: {}", mySessionId);
+
+        // 2. Clear UI immediately
+        container.getChildren().clear();
+        if (trackerList != null) trackerList.clear();
+
+        // 3. Prepare the Map to hold results (Thread-safe)
+        Map<Integer, PageThumbnailPanel> resultsMap = new ConcurrentHashMap<>();
+
+        // 4. Create a list of Future tasks
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+
+        for (int i = 0; i < document.getPageCount(); i++) {
+            final int pageIndex = i;
+
+            // Create an async task for each page
+            CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                // A. Check for cancellation (Race Condition Check)
+                if (currentSessionId.get() != mySessionId) return;
+
+                try {
+                    // B. Heavy Lifting (Render)
+                    Image thumbnail = pdfService.renderPageThumbnail(pageIndex);
+
+                    // C. Create Panel (Lightweight, unattached node)
+                    PageThumbnailPanel panel = new PageThumbnailPanel(
+                            pageIndex + 1,
+                            thumbnail,
+                            selected -> onPageThumbnailToggled(pageIndex, selected),
+                            clickedPage -> updatePreview(pageIndex + 1)
+                    );
+
+                    // D. Store in Map
+                    resultsMap.put(pageIndex, panel);
+
+                } catch (Exception e) {
+                    logger.error("Failed to render page {}", pageIndex, e);
+                }
+            }, renderExecutor);
+
+            futures.add(future);
+        }
+
+        // 5. When ALL tasks are finished...
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenRunAsync(() -> {
+                    // Race Condition Check: Is this session still valid?
+                    if (currentSessionId.get() != mySessionId) {
+                        logger.debug("Loading cancelled or superseded. Ignoring results.");
+                        return;
+                    }
+
+                    // 6. Sort and Extract
+                    // We use the Map to get items, but we sort by Index to ensure Page 1 comes before Page 2
+                    List<PageThumbnailPanel> sortedPanels = resultsMap.entrySet().stream()
+                            .sorted(Map.Entry.comparingByKey()) // Sort by Page Index (Key)
+                            .map(Map.Entry::getValue)
+                            .collect(Collectors.toList());
+
+                    // 7. Bulk Update UI (One-shot)
+                    Platform.runLater(() -> {
+                        // Final Race Condition Check
+                        if (currentSessionId.get() == mySessionId) {
+                            container.getChildren().setAll(sortedPanels);
+                            if (trackerList != null) trackerList.addAll(sortedPanels);
+                            logger.info("Finished loading {} thumbnails.", sortedPanels.size());
+                        }
+                    });
+                }, Platform::runLater); // Run the final aggregation on the JavaFX thread strictly if needed, or a worker.
+        // Ideally, run sort on background, setAll on FX.
+        // Modified above to run `thenRunAsync` on common pool, but internally calls Platform.runLater.
+    }
     public void loadPageThumbnails(PdfDocument document, Pane container, List<PageThumbnailPanel> trackerList) {
         // 1. Cancel any previous loading task to prevent race conditions
         if (currentLoadingTask != null && !currentLoadingTask.isDone()) {
@@ -240,6 +323,15 @@ public class PdfExtractorController {
         if (!pdfService.isDocumentLoaded()) {
             logger.warn("Cannot update preview: no document loaded");
             return;
+        }
+
+        // Update visual selection of thumbnail panel
+        if (currentSelectedPanel != null) {
+            currentSelectedPanel.setPreviewSelected(false);
+        }
+        if (pageIndex >= 0 && pageIndex < thumbnailPanels.size()) {
+            currentSelectedPanel = thumbnailPanels.get(pageIndex);
+            currentSelectedPanel.setPreviewSelected(true);
         }
 
         currentPreviewPage = pageIndex;
