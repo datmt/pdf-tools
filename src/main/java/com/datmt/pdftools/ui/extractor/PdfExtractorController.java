@@ -181,7 +181,8 @@ public class PdfExtractorController {
                         PageThumbnailPanel panel = new PageThumbnailPanel(
                                 pageIndex + 1,
                                 thumbnail,
-                                selected -> onPageThumbnailToggled(pageIndex, selected)
+                                selected -> onPageThumbnailToggled(pageIndex, selected),
+                                unused -> updatePreview(pageIndex)
                         );
 
                         batch.add(panel);
