@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.datmt.pdftools.ui.extractor.PdfExtractorController"
+            style="-fx-font-family: 'Segoe UI';">
+
+    <!-- Top toolbar -->
+    <top>
+        <HBox spacing="10" style="-fx-padding: 10; -fx-border-color: #cccccc; -fx-border-width: 0 0 1 0;">
+            <Button fx:id="loadButton" text="Load PDF" onAction="#onLoadPdf"/>
+            <Separator orientation="VERTICAL"/>
+            <Label fx:id="fileLabel" text="No file loaded" style="-fx-text-fill: #666666;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="pageCountLabel" text=""/>
+        </HBox>
+    </top>
+
+    <!-- Main content: 3-panel layout -->
+    <center>
+        <HBox spacing="10" style="-fx-padding: 10;">
+            
+            <!-- Left panel: Pages list -->
+            <VBox spacing="10" style="-fx-border-color: #e0e0e0; -fx-border-width: 0 1 0 0; -fx-padding: 10;">
+                <Label text="Pages" style="-fx-font-weight: bold;"/>
+                <ScrollPane fx:id="pagesScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS">
+                    <VBox fx:id="pagesListContainer" spacing="5" style="-fx-padding: 5;"/>
+                </ScrollPane>
+                <HBox spacing="5">
+                    <Button fx:id="selectAllButton" text="Select All" onAction="#onSelectAll" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                    <Button fx:id="deselectAllButton" text="Deselect All" onAction="#onDeselectAll" maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                </HBox>
+            </VBox>
+
+            <!-- Center panel: Preview -->
+            <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-padding: 10;">
+                <Label text="Preview" style="-fx-font-weight: bold;"/>
+                <ScrollPane fx:id="previewScrollPane" fitToWidth="true" fitToHeight="true" VBox.vgrow="ALWAYS">
+                    <StackPane fx:id="previewContainer" style="-fx-border-color: #e0e0e0; -fx-background-color: #f5f5f5;"/>
+                </ScrollPane>
+                <HBox spacing="5" alignment="CENTER">
+                    <Button fx:id="prevButton" text="← Previous" onAction="#onPreviousPage"/>
+                    <Label fx:id="currentPageLabel" text="Page 1" style="-fx-min-width: 100; -fx-text-alignment: center;"/>
+                    <Button fx:id="nextButton" text="Next →" onAction="#onNextPage"/>
+                </HBox>
+            </VBox>
+
+            <!-- Right panel: Selected pages and export -->
+            <VBox spacing="10" style="-fx-border-color: #e0e0e0; -fx-border-width: 0 0 0 1; -fx-padding: 10; -fx-min-width: 250;">
+                <Label text="Extract" style="-fx-font-weight: bold;"/>
+                
+                <VBox spacing="5">
+                    <Label text="Selected Pages:" style="-fx-font-size: 12;"/>
+                    <ScrollPane fx:id="selectedPagesScrollPane" fitToWidth="true">
+                        <VBox fx:id="selectedPagesList" spacing="3" style="-fx-padding: 5;"/>
+                    </ScrollPane>
+                </VBox>
+
+                <VBox spacing="5">
+                    <Label text="Add Pages:" style="-fx-font-size: 12;"/>
+                    <HBox spacing="5">
+                        <TextField fx:id="pageInputField" promptText="e.g. 1,3,5-7" HBox.hgrow="ALWAYS"/>
+                        <Button fx:id="addPagesButton" text="Add" onAction="#onAddPages" style="-fx-min-width: 60;"/>
+                    </HBox>
+                    <Label fx:id="inputHintLabel" text="Comma-separated pages or ranges (1-based)" 
+                           style="-fx-font-size: 10; -fx-text-fill: #999999;"/>
+                </VBox>
+
+                <Separator/>
+
+                <VBox spacing="5">
+                    <Button fx:id="removeSelectedButton" text="Remove Selected" onAction="#onRemoveSelected" maxWidth="Infinity"/>
+                    <Button fx:id="clearButton" text="Clear All" onAction="#onClearAll" maxWidth="Infinity"/>
+                </VBox>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <VBox spacing="5">
+                    <Label text="Output File:" style="-fx-font-size: 12;"/>
+                    <HBox spacing="5">
+                        <TextField fx:id="outputFileField" promptText="Output file name" HBox.hgrow="ALWAYS" disable="true"/>
+                        <Button fx:id="browseButton" text="Browse" onAction="#onBrowseOutput"/>
+                    </HBox>
+                </VBox>
+
+                <Button fx:id="exportButton" text="Export PDF" onAction="#onExport" 
+                        style="-fx-font-size: 14; -fx-padding: 10;" maxWidth="Infinity" disable="true"/>
+            </VBox>
+
+        </HBox>
+    </center>
+</BorderPane>
