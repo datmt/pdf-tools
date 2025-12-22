@@ -1,7 +1,7 @@
 # Quick Start Guide
 
 ## Prerequisites
-- Java 25 or higher
+- Java 21 or higher
 - Maven 3.6+
 
 ## Building

@@ -22,7 +22,7 @@ public class MainApplication extends Application {
         logger.debug("Java Version: {}", System.getProperty("java.version"));
 
         try {
-            FXMLLoader fxmlLoader = new FXMLLoader(MainApplication.class.getResource("ui/main-screen.fxml"));
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/com/datmt/pdftools/ui/main-screen.fxml"));
             Scene scene = new Scene(fxmlLoader.load(), 1000, 700);
             
             stage.setTitle("PDF Tools");

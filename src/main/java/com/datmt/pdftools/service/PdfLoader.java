@@ -1,6 +1,8 @@
 package com.datmt.pdftools.service;
 
 import com.datmt.pdftools.model.PdfDocument;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.io.RandomAccessReadBufferedFile;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +36,8 @@ public class PdfLoader {
         }
 
         try {
-            PDDocument pdfDocument = PDDocument.load(file);
+            logger.trace("Using Loader.loadPDF() with RandomAccessReadBufferedFile");
+            PDDocument pdfDocument = Loader.loadPDF(new RandomAccessReadBufferedFile(file));
             logger.info("Successfully loaded PDF: {} with {} pages", file.getName(), pdfDocument.getNumberOfPages());
             return new PdfDocument(file, pdfDocument);
         } catch (IOException e) {

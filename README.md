@@ -127,11 +127,12 @@ pdf-tools/
 
 ## Key Technologies
 
-- **Java 25** - Latest Java platform
+- **Java 21+** - Standard Java platform
 - **JavaFX 21** - Modern UI framework
 - **Apache PDFBox 3.0.1** - PDF manipulation
 - **Logback 1.5.3** - Logging framework
 - **Maven 3.6+** - Build tool
+- **No Java modules** - Simple classpath, no module-info.java
 
 ## Building the Project
 
