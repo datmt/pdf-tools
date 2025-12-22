@@ -8,9 +8,13 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
@@ -21,8 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -32,28 +34,47 @@ import java.util.stream.Collectors;
 public class PdfExtractorController {
     private static final Logger logger = LoggerFactory.getLogger(PdfExtractorController.class);
 
-    @FXML private Button loadButton;
-    @FXML private Label fileLabel;
-    @FXML private Label pageCountLabel;
+    @FXML
+    private Button loadButton;
+    @FXML
+    private Label fileLabel;
+    @FXML
+    private Label pageCountLabel;
 
-    @FXML private VBox pagesListContainer;
-    @FXML private ScrollPane pagesScrollPane;
-    @FXML private StackPane previewContainer;
-    @FXML private ScrollPane previewScrollPane;
-    @FXML private Label currentPageLabel;
-    @FXML private Button prevButton, nextButton;
+    @FXML
+    private VBox pagesListContainer;
+    @FXML
+    private ScrollPane pagesScrollPane;
+    @FXML
+    private StackPane previewContainer;
+    @FXML
+    private ScrollPane previewScrollPane;
+    @FXML
+    private Label currentPageLabel;
+    @FXML
+    private Button prevButton, nextButton;
 
-    @FXML private VBox selectedPagesList;
-    @FXML private ScrollPane selectedPagesScrollPane;
-    @FXML private TextField pageInputField;
-    @FXML private Button addPagesButton;
-    @FXML private Label inputHintLabel;
-    @FXML private Button removeSelectedButton, clearButton;
+    @FXML
+    private VBox selectedPagesList;
+    @FXML
+    private ScrollPane selectedPagesScrollPane;
+    @FXML
+    private TextField pageInputField;
+    @FXML
+    private Button addPagesButton;
+    @FXML
+    private Label inputHintLabel;
+    @FXML
+    private Button removeSelectedButton, clearButton;
 
-    @FXML private TextField outputFileField;
-    @FXML private Button browseButton, exportButton;
-    @FXML private Button selectAllButton, deselectAllButton;
-    @FXML private Label notificationLabel;
+    @FXML
+    private TextField outputFileField;
+    @FXML
+    private Button browseButton, exportButton;
+    @FXML
+    private Button selectAllButton, deselectAllButton;
+    @FXML
+    private Label notificationLabel;
 
     private PdfService pdfService;
     private Set<Integer> selectedPages;
@@ -68,7 +89,7 @@ public class PdfExtractorController {
         selectedPages = new TreeSet<>();
         thumbnailPanels = new ArrayList<>();
         currentPreviewPage = 0;
-        
+
         setupEventHandlers();
         logger.debug("Controller initialization complete");
     }
@@ -85,7 +106,7 @@ public class PdfExtractorController {
         fileChooser.setTitle("Select PDF File");
         fileChooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
-        
+
         Stage stage = (Stage) loadButton.getScene().getWindow();
         File selectedFile = fileChooser.showOpenDialog(stage);
 
@@ -96,7 +117,7 @@ public class PdfExtractorController {
 
     private void loadPdfFile(File file) {
         logger.info("Loading PDF file: {}", file.getAbsolutePath());
-        
+
         Task<PdfDocument> loadTask = new Task<>() {
             @Override
             protected PdfDocument call() throws Exception {
@@ -108,17 +129,17 @@ public class PdfExtractorController {
         loadTask.setOnSucceeded(event -> {
             PdfDocument doc = loadTask.getValue();
             logger.info("PDF loaded successfully: {} pages", doc.getPageCount());
-            
+
             fileLabel.setText(file.getName());
             pageCountLabel.setText(doc.getPageCount() + " pages");
-            
+
             selectedPages.clear();
             selectedPagesList.getChildren().clear();
             currentPreviewPage = 0;
-            
-            loadPageThumbnails(doc);
+
+            loadPageThumbnails(doc, pagesListContainer, thumbnailPanels);
             updatePreview(0);
-            
+
             removeSelectedButton.setDisable(selectedPagesList.getChildren().isEmpty());
             clearButton.setDisable(true);
         });
@@ -131,41 +152,79 @@ public class PdfExtractorController {
         new Thread(loadTask).start();
     }
 
-    private void loadPageThumbnails(PdfDocument document) {
-        logger.debug("Loading page thumbnails for {} pages", document.getPageCount());
-        
-        pagesListContainer.getChildren().clear();
-        thumbnailPanels.clear();
-        
-        Task<Void> thumbnailTask = new Task<>() {
+    Task<Void> currentLoadingTask;
+
+    public void loadPageThumbnails(PdfDocument document, Pane container, List<PageThumbnailPanel> trackerList) {
+        // 1. Cancel any previous loading task to prevent race conditions
+        if (currentLoadingTask != null && !currentLoadingTask.isDone()) {
+            currentLoadingTask.cancel();
+        }
+
+        // 2. Clear UI immediately (must be on FX Thread)
+        container.getChildren().clear();
+        if (trackerList != null) trackerList.clear();
+
+        logger.debug("Starting thumbnail generation for {} pages", document.getPageCount());
+        currentLoadingTask = new Task<>() {
             @Override
-            protected Void call() throws Exception {
+            protected Void call() {
+                final int BATCH_SIZE = 10; // Update UI every 10 items
+                List<PageThumbnailPanel> batch = new ArrayList<>(BATCH_SIZE);
+
                 for (int i = 0; i < document.getPageCount(); i++) {
+                    // 3. Fail-fast: Stop processing if task is cancelled
+                    if (isCancelled()) {
+                        logger.debug("Thumbnail loading cancelled.");
+                        return null;
+                    }
+
                     final int pageIndex = i;
-                    logger.trace("Rendering thumbnail for page {}", pageIndex);
-                    
                     try {
+                        // Heavy lifting (IO/Rendering) happens here off-thread
                         Image thumbnail = pdfService.renderPageThumbnail(pageIndex);
-                        Platform.runLater(() -> {
-                            PageThumbnailPanel panel = new PageThumbnailPanel(
-                                    pageIndex + 1,
-                                    thumbnail,
-                                    selected -> onPageThumbnailToggled(pageIndex, selected)
-                            );
-                            thumbnailPanels.add(panel);
-                            // Insert at correct index to maintain order
-                            pagesListContainer.getChildren().add(pageIndex, panel);
-                            logger.trace("Thumbnail for page {} added to UI at index {}", pageIndex, pageIndex);
-                        });
+
+                        // Create the panel (nodes can be created off-thread, just not attached)
+                        PageThumbnailPanel panel = new PageThumbnailPanel(
+                                pageIndex + 1,
+                                thumbnail,
+                                selected -> onPageThumbnailToggled(pageIndex, selected)
+                        );
+
+                        batch.add(panel);
+
+                        // 4. Batch Updates: Only hit the UI thread when batch is full or at the end
+                        if (batch.size() >= BATCH_SIZE || pageIndex == document.getPageCount() - 1) {
+                            final List<PageThumbnailPanel> toAdd = new ArrayList<>(batch); // Copy for the closure
+
+                            Platform.runLater(() -> {
+                                // Check cancellation again before touching UI
+                                if (!isCancelled()) {
+                                    container.getChildren().addAll(toAdd);
+                                    if (trackerList != null) trackerList.addAll(toAdd);
+                                }
+                            });
+
+                            batch.clear();
+
+                            // Optional: Small sleep to yield CPU if rendering is extremely aggressive
+                            // Thread.sleep(10);
+                        }
+
                     } catch (Exception e) {
-                        logger.warn("Failed to render thumbnail for page {}: {}", pageIndex, e.getMessage());
+                        logger.error("Error rendering page {}", pageIndex, e);
                     }
                 }
                 return null;
             }
         };
 
-        new Thread(thumbnailTask).start();
+        // 5. Handle success/fail states cleanly
+        currentLoadingTask.setOnFailed(e -> logger.error("Thumbnail task failed", currentLoadingTask.getException()));
+
+        // Use a daemon thread so it doesn't prevent app shutdown
+        Thread thread = new Thread(currentLoadingTask);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private void onPageThumbnailToggled(int pageIndex, boolean selected) {
@@ -182,7 +241,7 @@ public class PdfExtractorController {
 
     private void updatePreview(int pageIndex) {
         logger.debug("Updating preview for page {}", pageIndex);
-        
+
         if (!pdfService.isDocumentLoaded()) {
             logger.warn("Cannot update preview: no document loaded");
             return;
@@ -201,7 +260,7 @@ public class PdfExtractorController {
             }
         };
 
-        renderTask.setOnSucceeded(event -> {
+        renderTask.setOnSucceeded(_ -> {
             Image image = renderTask.getValue();
             previewContainer.getChildren().clear();
             currentImageView = new ImageView(image);
@@ -240,7 +299,7 @@ public class PdfExtractorController {
     private void onAddPages() {
         String input = pageInputField.getText().trim();
         logger.info("User entered page selection: {}", input);
-        
+
         if (input.isEmpty()) {
             logger.warn("Empty page input");
             showWarning("Please enter page numbers");
@@ -250,11 +309,11 @@ public class PdfExtractorController {
         try {
             Set<Integer> pagesToAdd = parsePageInput(input);
             logger.debug("Parsed {} pages from input", pagesToAdd.size());
-            
+
             selectedPages.addAll(pagesToAdd);
             updateSelectedPagesList();
             pageInputField.clear();
-            
+
             logger.info("Selected pages updated: {}", selectedPages);
             showInfo("Added " + pagesToAdd.size() + " page(s)");
         } catch (IllegalArgumentException e) {
@@ -271,22 +330,22 @@ public class PdfExtractorController {
         String[] parts = input.split(",");
         for (String part : parts) {
             part = part.trim();
-            
+
             if (part.contains("-")) {
                 // Range: e.g., "5-10"
                 String[] range = part.split("-");
                 if (range.length != 2) {
                     throw new IllegalArgumentException("Invalid range format: " + part);
                 }
-                
+
                 try {
                     int start = Integer.parseInt(range[0].trim()) - 1; // Convert to 0-based
                     int end = Integer.parseInt(range[1].trim()) - 1;
-                    
+
                     if (start < 0 || end >= pageCount || start > end) {
                         throw new IllegalArgumentException("Invalid range: " + part);
                     }
-                    
+
                     for (int i = start; i <= end; i++) {
                         pages.add(i);
                     }
@@ -330,16 +389,16 @@ public class PdfExtractorController {
     @FXML
     private void onSelectAll() {
         if (!pdfService.isDocumentLoaded()) return;
-        
+
         logger.info("User selected all pages");
         int pageCount = pdfService.getCurrentDocument().getPageCount();
         selectedPages.addAll(java.util.stream.IntStream.range(0, pageCount).boxed().collect(Collectors.toSet()));
-        
+
         // Update all thumbnail checkboxes
         for (PageThumbnailPanel panel : thumbnailPanels) {
             panel.setSelected(true);
         }
-        
+
         updateSelectedPagesList();
     }
 
@@ -347,12 +406,12 @@ public class PdfExtractorController {
     private void onDeselectAll() {
         logger.info("User deselected all pages");
         selectedPages.clear();
-        
+
         // Update all thumbnail checkboxes
         for (PageThumbnailPanel panel : thumbnailPanels) {
             panel.setSelected(false);
         }
-        
+
         updateSelectedPagesList();
     }
 
@@ -390,7 +449,7 @@ public class PdfExtractorController {
     @FXML
     private void onExport() {
         logger.info("User clicked export");
-        
+
         if (selectedPages.isEmpty()) {
             logger.warn("No pages selected for export");
             showWarning("Please select pages to export");
@@ -449,7 +508,7 @@ public class PdfExtractorController {
             notificationLabel.setText(message);
             notificationLabel.setStyle("-fx-padding: 8; -fx-font-size: 12; -fx-text-fill: white; -fx-background-color: " + bgColor + ";");
             notificationLabel.setVisible(true);
-            
+
             // Auto-hide after 5 seconds
             Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(5), event -> {
                 notificationLabel.setVisible(false);
