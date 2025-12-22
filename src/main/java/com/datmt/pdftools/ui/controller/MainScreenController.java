@@ -27,6 +27,8 @@ public class MainScreenController {
             Stage stage = new Stage();
             stage.setTitle("PDF Extractor");
             stage.setScene(scene);
+            stage.setMinWidth(1400);
+            stage.setMinHeight(800);
             stage.show();
             
             logger.info("PDF Extractor window opened");

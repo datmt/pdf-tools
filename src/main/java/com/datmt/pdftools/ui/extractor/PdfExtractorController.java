@@ -3,6 +3,8 @@ package com.datmt.pdftools.ui.extractor;
 import com.datmt.pdftools.model.PdfDocument;
 import com.datmt.pdftools.service.PdfService;
 import com.datmt.pdftools.ui.extractor.components.PageThumbnailPanel;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -13,6 +15,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +53,7 @@ public class PdfExtractorController {
     @FXML private TextField outputFileField;
     @FXML private Button browseButton, exportButton;
     @FXML private Button selectAllButton, deselectAllButton;
+    @FXML private Label notificationLabel;
 
     private PdfService pdfService;
     private Set<Integer> selectedPages;
@@ -119,7 +123,7 @@ public class PdfExtractorController {
 
         loadTask.setOnFailed(event -> {
             logger.error("Failed to load PDF", loadTask.getException());
-            showError("Failed to load PDF", loadTask.getException().getMessage());
+            showError("Failed to load PDF: " + loadTask.getException().getMessage());
         });
 
         new Thread(loadTask).start();
@@ -145,8 +149,9 @@ public class PdfExtractorController {
                                     thumbnail,
                                     selected -> onPageThumbnailClicked(pageIndex, selected)
                             );
-                            pagesListContainer.getChildren().add(panel);
-                            logger.trace("Thumbnail for page {} added to UI", pageIndex);
+                            // Insert at correct index to maintain order
+                            pagesListContainer.getChildren().add(pageIndex, panel);
+                            logger.trace("Thumbnail for page {} added to UI at index {}", pageIndex, pageIndex);
                         });
                     } catch (Exception e) {
                         logger.warn("Failed to render thumbnail for page {}: {}", pageIndex, e.getMessage());
@@ -197,7 +202,7 @@ public class PdfExtractorController {
 
         renderTask.setOnFailed(event -> {
             logger.error("Failed to render page preview", renderTask.getException());
-            showError("Render Error", "Failed to render page preview");
+            showError("Failed to render page preview");
         });
 
         new Thread(renderTask).start();
@@ -227,7 +232,7 @@ public class PdfExtractorController {
         
         if (input.isEmpty()) {
             logger.warn("Empty page input");
-            showWarning("Input Error", "Please enter page numbers");
+            showWarning("Please enter page numbers");
             return;
         }
 
@@ -240,9 +245,10 @@ public class PdfExtractorController {
             pageInputField.clear();
             
             logger.info("Selected pages updated: {}", selectedPages);
+            showInfo("Added " + pagesToAdd.size() + " page(s)");
         } catch (IllegalArgumentException e) {
             logger.warn("Invalid page input: {}", e.getMessage());
-            showWarning("Input Error", e.getMessage());
+            showWarning(e.getMessage());
         }
     }
 
@@ -330,7 +336,7 @@ public class PdfExtractorController {
     @FXML
     private void onRemoveSelected() {
         logger.warn("Remove selected not yet implemented");
-        showWarning("Not Implemented", "This feature will be implemented soon");
+        showWarning("This feature will be implemented soon");
     }
 
     @FXML
@@ -364,14 +370,14 @@ public class PdfExtractorController {
         
         if (selectedPages.isEmpty()) {
             logger.warn("No pages selected for export");
-            showWarning("No Pages Selected", "Please select pages to export");
+            showWarning("Please select pages to export");
             return;
         }
 
         String outputPath = outputFileField.getText().trim();
         if (outputPath.isEmpty()) {
             logger.warn("No output file specified");
-            showWarning("No Output File", "Please specify an output file");
+            showWarning("Please specify an output file");
             return;
         }
 
@@ -389,41 +395,43 @@ public class PdfExtractorController {
 
         exportTask.setOnSucceeded(event -> {
             logger.info("Export completed successfully");
-            showInfo("Export Successful", "PDF exported to:\n" + outputFile.getAbsolutePath());
+            showInfo("PDF exported successfully");
         });
 
         exportTask.setOnFailed(event -> {
             logger.error("Export failed", exportTask.getException());
-            showError("Export Failed", exportTask.getException().getMessage());
+            showError("Export failed: " + exportTask.getException().getMessage());
         });
 
         new Thread(exportTask).start();
     }
 
-    private void showError(String title, String message) {
-        logger.warn("Showing error dialog: {} - {}", title, message);
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+    private void showError(String message) {
+        logger.warn("Showing error notification: {}", message);
+        showNotification(message, "#d32f2f");
     }
 
-    private void showWarning(String title, String message) {
-        logger.warn("Showing warning dialog: {} - {}", title, message);
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+    private void showWarning(String message) {
+        logger.warn("Showing warning notification: {}", message);
+        showNotification(message, "#f57c00");
     }
 
-    private void showInfo(String title, String message) {
-        logger.info("Showing info dialog: {} - {}", title, message);
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+    private void showInfo(String message) {
+        logger.info("Showing info notification: {}", message);
+        showNotification(message, "#388e3c");
+    }
+
+    private void showNotification(String message, String bgColor) {
+        Platform.runLater(() -> {
+            notificationLabel.setText(message);
+            notificationLabel.setStyle("-fx-padding: 8; -fx-font-size: 12; -fx-text-fill: white; -fx-background-color: " + bgColor + ";");
+            notificationLabel.setVisible(true);
+            
+            // Auto-hide after 5 seconds
+            Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(5), event -> {
+                notificationLabel.setVisible(false);
+            }));
+            timeline.play();
+        });
     }
 }
