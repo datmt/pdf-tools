@@ -347,7 +347,7 @@ public class PdfExtractorController {
             }
         };
 
-        renderTask.setOnSucceeded(_ -> {
+        renderTask.setOnSucceeded(e -> {
             Image image = renderTask.getValue();
             previewContainer.getChildren().clear();
             currentImageView = new ImageView(image);
