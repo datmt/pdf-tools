@@ -137,20 +137,20 @@ public class PdfExtractorController {
         // Create placeholder image
         placeholderImage = createPlaceholderImage();
 
-        // Set up scroll listener with debouncing
-        scrollDebounceTimeline = new Timeline(new KeyFrame(Duration.millis(50), e -> updateVisibleThumbnails()));
+        // Set up scroll listener with debouncing (150ms to handle slider dragging)
+        scrollDebounceTimeline = new Timeline(new KeyFrame(Duration.millis(150), e -> updateVisibleThumbnails()));
         scrollDebounceTimeline.setCycleCount(1);
 
         pagesScrollPane.vvalueProperty().addListener((obs, oldVal, newVal) -> {
-            // Restart debounce timer on each scroll
+            // Restart debounce timer on each scroll event
             scrollDebounceTimeline.stop();
-            scrollDebounceTimeline.play();
+            scrollDebounceTimeline.playFromStart();
         });
 
         // Also listen to viewport changes (window resize)
         pagesScrollPane.viewportBoundsProperty().addListener((obs, oldVal, newVal) -> {
             scrollDebounceTimeline.stop();
-            scrollDebounceTimeline.play();
+            scrollDebounceTimeline.playFromStart();
         });
     }
 
@@ -406,20 +406,57 @@ public class PdfExtractorController {
     }
 
     private int[] getVisiblePanelRange() {
-        Bounds viewportBounds = pagesScrollPane.getViewportBounds();
-        double viewportHeight = viewportBounds.getHeight();
-        double contentHeight = pagesListContainer.getHeight();
+        if (thumbnailPanels.isEmpty()) {
+            return new int[]{0, 0};
+        }
 
-        if (contentHeight <= 0 || viewportHeight <= 0) {
-            // Layout not ready, default to first few panels
+        // Get viewport bounds in scene coordinates
+        Bounds viewportBoundsInScene = pagesScrollPane.getViewportBounds();
+        Bounds scrollPaneBoundsInScene = pagesScrollPane.localToScene(pagesScrollPane.getBoundsInLocal());
+
+        if (scrollPaneBoundsInScene == null) {
             return new int[]{0, Math.min(BUFFER_SIZE * 2, thumbnailPanels.size() - 1)};
         }
 
-        double scrollY = pagesScrollPane.getVvalue() * (contentHeight - viewportHeight);
+        double viewportTop = scrollPaneBoundsInScene.getMinY();
+        double viewportBottom = scrollPaneBoundsInScene.getMaxY();
 
-        int firstVisible = Math.max(0, (int)(scrollY / PANEL_HEIGHT) - BUFFER_SIZE);
-        int lastVisible = Math.min(thumbnailPanels.size() - 1,
-                                   (int)((scrollY + viewportHeight) / PANEL_HEIGHT) + BUFFER_SIZE);
+        int firstVisible = -1;
+        int lastVisible = -1;
+
+        // Find panels that intersect with the viewport
+        for (int i = 0; i < thumbnailPanels.size(); i++) {
+            PageThumbnailPanel panel = thumbnailPanels.get(i);
+            Bounds panelBoundsInScene = panel.localToScene(panel.getBoundsInLocal());
+
+            if (panelBoundsInScene == null) continue;
+
+            double panelTop = panelBoundsInScene.getMinY();
+            double panelBottom = panelBoundsInScene.getMaxY();
+
+            // Check if panel intersects with viewport
+            boolean isVisible = panelBottom >= viewportTop && panelTop <= viewportBottom;
+
+            if (isVisible) {
+                if (firstVisible == -1) {
+                    firstVisible = i;
+                }
+                lastVisible = i;
+            } else if (firstVisible != -1) {
+                // We've passed the visible area, no need to continue
+                break;
+            }
+        }
+
+        // If no panels visible yet (layout not ready), default to first few
+        if (firstVisible == -1) {
+            firstVisible = 0;
+            lastVisible = Math.min(BUFFER_SIZE * 2, thumbnailPanels.size() - 1);
+        }
+
+        // Add buffer
+        firstVisible = Math.max(0, firstVisible - BUFFER_SIZE);
+        lastVisible = Math.min(thumbnailPanels.size() - 1, lastVisible + BUFFER_SIZE);
 
         return new int[]{firstVisible, lastVisible};
     }
