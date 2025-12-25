@@ -20,7 +20,10 @@ public class PageThumbnailPanel extends VBox {
     private static final int THUMBNAIL_SIZE = 100;
 
     private CheckBox selectCheckBox;
+    private ImageView imageView;
     private int pageNumber;
+    private int pageIndex; // 0-based index
+    private boolean imageLoaded;
     private Consumer<Void> onThumbnailClicked;
     private static final String BORDER_UNSELECTED = "-fx-border-color: #e0e0e0; -fx-border-radius: 3; -fx-padding: 5; -fx-cursor: hand;";
     private static final String BORDER_SELECTED = "-fx-border-color: #2196F3; -fx-border-radius: 3; -fx-padding: 5; -fx-border-width: 2; -fx-cursor: hand;";
@@ -48,14 +51,16 @@ public class PageThumbnailPanel extends VBox {
         logger.trace("Creating thumbnail panel for page {}", pageNumber);
 
         this.pageNumber = pageNumber;
+        this.pageIndex = pageNumber - 1; // Convert to 0-based
         this.onThumbnailClicked = onThumbnailClicked;
+        this.imageLoaded = (thumbnail != null);
 
         setSpacing(5);
         setAlignment(Pos.TOP_CENTER);
         setStyle(BORDER_UNSELECTED);
 
         // Thumbnail image
-        ImageView imageView = new ImageView(thumbnail);
+        this.imageView = new ImageView(thumbnail);
         imageView.setPreserveRatio(true);
         imageView.setFitWidth(THUMBNAIL_SIZE);
         imageView.setFitHeight(THUMBNAIL_SIZE);
@@ -100,5 +105,23 @@ public class PageThumbnailPanel extends VBox {
 
     public void setPreviewSelected(boolean selected) {
         setStyle(selected ? BORDER_SELECTED : BORDER_UNSELECTED);
+    }
+
+    public int getPageIndex() {
+        return pageIndex;
+    }
+
+    public boolean isImageLoaded() {
+        return imageLoaded;
+    }
+
+    public void setThumbnail(Image thumbnail) {
+        this.imageView.setImage(thumbnail);
+        this.imageLoaded = (thumbnail != null);
+    }
+
+    public void clearThumbnail(Image placeholder) {
+        this.imageView.setImage(placeholder);
+        this.imageLoaded = false;
     }
 }

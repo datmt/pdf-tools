@@ -22,6 +22,13 @@ import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javafx.geometry.Bounds;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
+
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -37,6 +44,10 @@ import java.util.stream.Collectors;
  */
 public class PdfExtractorController {
     private static final Logger logger = LoggerFactory.getLogger(PdfExtractorController.class);
+    private static final int MAX_RENDERED_THUMBNAILS = 100;
+    private static final int BUFFER_SIZE = 5; // Extra panels above/below viewport to preload
+    private static final int PANEL_HEIGHT = 130; // Approximate height of each thumbnail panel
+
     Task<Void> currentLoadingTask;
     @FXML
     private Button loadButton;
@@ -102,6 +113,11 @@ public class PdfExtractorController {
     private final ExecutorService renderExecutor = Executors.newFixedThreadPool(4); // Limit threads to save RAM
     private final AtomicReference<Object> currentSessionId = new AtomicReference<>(); // Token to track active request
 
+    // Lazy loading state
+    private Image placeholderImage;
+    private Set<Integer> renderedThumbnails = new HashSet<>();
+    private Timeline scrollDebounceTimeline;
+
     @FXML
     public void initialize() {
         logger.trace("Initializing PdfExtractorController");
@@ -113,7 +129,51 @@ public class PdfExtractorController {
 
         setupEventHandlers();
         setupBookmarkTreeView();
+        setupLazyLoading();
         logger.debug("Controller initialization complete");
+    }
+
+    private void setupLazyLoading() {
+        // Create placeholder image
+        placeholderImage = createPlaceholderImage();
+
+        // Set up scroll listener with debouncing
+        scrollDebounceTimeline = new Timeline(new KeyFrame(Duration.millis(50), e -> updateVisibleThumbnails()));
+        scrollDebounceTimeline.setCycleCount(1);
+
+        pagesScrollPane.vvalueProperty().addListener((obs, oldVal, newVal) -> {
+            // Restart debounce timer on each scroll
+            scrollDebounceTimeline.stop();
+            scrollDebounceTimeline.play();
+        });
+
+        // Also listen to viewport changes (window resize)
+        pagesScrollPane.viewportBoundsProperty().addListener((obs, oldVal, newVal) -> {
+            scrollDebounceTimeline.stop();
+            scrollDebounceTimeline.play();
+        });
+    }
+
+    private Image createPlaceholderImage() {
+        int size = 100;
+        Canvas canvas = new Canvas(size, size);
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+
+        // Gray background
+        gc.setFill(Color.rgb(230, 230, 230));
+        gc.fillRect(0, 0, size, size);
+
+        // Border
+        gc.setStroke(Color.rgb(200, 200, 200));
+        gc.strokeRect(0, 0, size, size);
+
+        // Loading text
+        gc.setFill(Color.rgb(150, 150, 150));
+        gc.setFont(Font.font(12));
+        gc.setTextAlign(TextAlignment.CENTER);
+        gc.fillText("Loading...", size / 2, size / 2);
+
+        return canvas.snapshot(null, null);
     }
 
     private void setupBookmarkTreeView() {
@@ -283,77 +343,137 @@ public class PdfExtractorController {
         // Modified above to run `thenRunAsync` on common pool, but internally calls Platform.runLater.
     }
     public void loadPageThumbnails(PdfDocument document, Pane container, List<PageThumbnailPanel> trackerList) {
-        // 1. Cancel any previous loading task to prevent race conditions
-        if (currentLoadingTask != null && !currentLoadingTask.isDone()) {
-            currentLoadingTask.cancel();
-        }
-
-        // 2. Clear UI immediately (must be on FX Thread)
+        // Clear previous state
         container.getChildren().clear();
         if (trackerList != null) trackerList.clear();
+        renderedThumbnails.clear();
 
-        logger.debug("Starting thumbnail generation for {} pages", document.getPageCount());
-        currentLoadingTask = new Task<>() {
-            @Override
-            protected Void call() {
-                final int BATCH_SIZE = 10; // Update UI every 10 items
-                List<PageThumbnailPanel> batch = new ArrayList<>(BATCH_SIZE);
+        logger.debug("Creating {} placeholder panels for lazy loading", document.getPageCount());
 
-                for (int i = 0; i < document.getPageCount(); i++) {
-                    // 3. Fail-fast: Stop processing if task is cancelled
-                    if (isCancelled()) {
-                        logger.debug("Thumbnail loading cancelled.");
-                        return null;
-                    }
+        // Create all panels with placeholder images immediately (fast, no rendering)
+        for (int i = 0; i < document.getPageCount(); i++) {
+            final int pageIndex = i;
+            PageThumbnailPanel panel = new PageThumbnailPanel(
+                    pageIndex + 1,
+                    placeholderImage,
+                    selected -> onPageThumbnailToggled(pageIndex, selected),
+                    unused -> updatePreview(pageIndex)
+            );
+            container.getChildren().add(panel);
+            if (trackerList != null) trackerList.add(panel);
+        }
 
-                    final int pageIndex = i;
-                    try {
-                        // Heavy lifting (IO/Rendering) happens here off-thread
-                        Image thumbnail = pdfService.renderPageThumbnail(pageIndex);
+        logger.debug("Created {} placeholder panels, triggering initial lazy load", document.getPageCount());
 
-                        // Create the panel (nodes can be created off-thread, just not attached)
-                        PageThumbnailPanel panel = new PageThumbnailPanel(
-                                pageIndex + 1,
-                                thumbnail,
-                                selected -> onPageThumbnailToggled(pageIndex, selected),
-                                unused -> updatePreview(pageIndex)
-                        );
+        // Trigger initial visibility check after layout is complete
+        Platform.runLater(() -> {
+            // Small delay to ensure layout is calculated
+            Timeline initialLoad = new Timeline(new KeyFrame(Duration.millis(100), e -> updateVisibleThumbnails()));
+            initialLoad.play();
+        });
+    }
 
-                        batch.add(panel);
+    private void updateVisibleThumbnails() {
+        if (thumbnailPanels.isEmpty() || !pdfService.isDocumentLoaded()) {
+            return;
+        }
 
-                        // 4. Batch Updates: Only hit the UI thread when batch is full or at the end
-                        if (batch.size() >= BATCH_SIZE || pageIndex == document.getPageCount() - 1) {
-                            final List<PageThumbnailPanel> toAdd = new ArrayList<>(batch); // Copy for the closure
+        int[] visibleRange = getVisiblePanelRange();
+        int firstVisible = visibleRange[0];
+        int lastVisible = visibleRange[1];
 
-                            Platform.runLater(() -> {
-                                // Check cancellation again before touching UI
-                                if (!isCancelled()) {
-                                    container.getChildren().addAll(toAdd);
-                                    if (trackerList != null) trackerList.addAll(toAdd);
-                                }
-                            });
+        logger.trace("Visible range: {} to {}, currently rendered: {}", firstVisible, lastVisible, renderedThumbnails.size());
 
-                            batch.clear();
-
-                            // Optional: Small sleep to yield CPU if rendering is extremely aggressive
-                            // Thread.sleep(10);
-                        }
-
-                    } catch (Exception e) {
-                        logger.error("Error rendering page {}", pageIndex, e);
-                    }
-                }
-                return null;
+        // Determine which panels need to be loaded
+        Set<Integer> toLoad = new HashSet<>();
+        for (int i = firstVisible; i <= lastVisible; i++) {
+            if (i >= 0 && i < thumbnailPanels.size() && !renderedThumbnails.contains(i)) {
+                toLoad.add(i);
             }
-        };
+        }
 
-        // 5. Handle success/fail states cleanly
-        currentLoadingTask.setOnFailed(e -> logger.error("Thumbnail task failed", currentLoadingTask.getException()));
+        // If we would exceed the limit, unload furthest non-visible thumbnails first
+        int willBeRendered = renderedThumbnails.size() + toLoad.size();
+        if (willBeRendered > MAX_RENDERED_THUMBNAILS) {
+            int toUnload = willBeRendered - MAX_RENDERED_THUMBNAILS;
+            unloadFurthestThumbnails(firstVisible, lastVisible, toUnload);
+        }
 
-        // Use a daemon thread so it doesn't prevent app shutdown
-        Thread thread = new Thread(currentLoadingTask);
-        thread.setDaemon(true);
-        thread.start();
+        // Load visible thumbnails
+        for (int pageIndex : toLoad) {
+            loadThumbnailForPage(pageIndex);
+        }
+    }
+
+    private int[] getVisiblePanelRange() {
+        Bounds viewportBounds = pagesScrollPane.getViewportBounds();
+        double viewportHeight = viewportBounds.getHeight();
+        double contentHeight = pagesListContainer.getHeight();
+
+        if (contentHeight <= 0 || viewportHeight <= 0) {
+            // Layout not ready, default to first few panels
+            return new int[]{0, Math.min(BUFFER_SIZE * 2, thumbnailPanels.size() - 1)};
+        }
+
+        double scrollY = pagesScrollPane.getVvalue() * (contentHeight - viewportHeight);
+
+        int firstVisible = Math.max(0, (int)(scrollY / PANEL_HEIGHT) - BUFFER_SIZE);
+        int lastVisible = Math.min(thumbnailPanels.size() - 1,
+                                   (int)((scrollY + viewportHeight) / PANEL_HEIGHT) + BUFFER_SIZE);
+
+        return new int[]{firstVisible, lastVisible};
+    }
+
+    private void loadThumbnailForPage(int pageIndex) {
+        if (renderedThumbnails.contains(pageIndex) || pageIndex < 0 || pageIndex >= thumbnailPanels.size()) {
+            return;
+        }
+
+        // Mark as pending to avoid duplicate loads
+        renderedThumbnails.add(pageIndex);
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                Image thumbnail = pdfService.renderPageThumbnail(pageIndex);
+                Platform.runLater(() -> {
+                    if (pageIndex < thumbnailPanels.size()) {
+                        thumbnailPanels.get(pageIndex).setThumbnail(thumbnail);
+                        logger.trace("Loaded thumbnail for page {}", pageIndex);
+                    }
+                });
+            } catch (Exception e) {
+                logger.error("Failed to load thumbnail for page {}", pageIndex, e);
+                // Remove from rendered set so it can be retried
+                renderedThumbnails.remove(pageIndex);
+            }
+        }, renderExecutor);
+    }
+
+    private void unloadFurthestThumbnails(int firstVisible, int lastVisible, int count) {
+        // Find rendered thumbnails that are furthest from the visible range
+        List<Integer> candidates = new ArrayList<>(renderedThumbnails);
+
+        // Sort by distance from visible range (furthest first)
+        int center = (firstVisible + lastVisible) / 2;
+        candidates.sort((a, b) -> {
+            int distA = Math.min(Math.abs(a - firstVisible), Math.abs(a - lastVisible));
+            int distB = Math.min(Math.abs(b - firstVisible), Math.abs(b - lastVisible));
+            return Integer.compare(distB, distA); // Descending order (furthest first)
+        });
+
+        // Unload the furthest ones (but not those in visible range)
+        int unloaded = 0;
+        for (int pageIndex : candidates) {
+            if (unloaded >= count) break;
+            if (pageIndex < firstVisible || pageIndex > lastVisible) {
+                if (pageIndex >= 0 && pageIndex < thumbnailPanels.size()) {
+                    thumbnailPanels.get(pageIndex).clearThumbnail(placeholderImage);
+                    renderedThumbnails.remove(pageIndex);
+                    unloaded++;
+                    logger.trace("Unloaded thumbnail for page {}", pageIndex);
+                }
+            }
+        }
     }
 
     private void onPageThumbnailToggled(int pageIndex, boolean selected) {
