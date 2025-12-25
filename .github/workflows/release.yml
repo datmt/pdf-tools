@@ -64,8 +64,11 @@ jobs:
 
       - name: Create AppImage
         run: |
+          # Download and extract appimagetool (no FUSE needed)
           wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool-x86_64.AppImage
+          ./appimagetool-x86_64.AppImage --appimage-extract
+          mv squashfs-root appimagetool
 
           mkdir -p AppDir/usr/bin
           mkdir -p AppDir/usr/share/applications
@@ -100,7 +103,8 @@ jobs:
           APPRUN
           chmod +x AppDir/AppRun
 
-          ARCH=x86_64 ./appimagetool-x86_64.AppImage AppDir ${{ env.APP_NAME }}-linux-x86_64.AppImage
+          # Use extracted appimagetool
+          ARCH=x86_64 ./appimagetool/AppRun AppDir ${{ env.APP_NAME }}-linux-x86_64.AppImage
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
