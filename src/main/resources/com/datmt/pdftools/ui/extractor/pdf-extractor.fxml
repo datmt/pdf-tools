@@ -56,6 +56,12 @@
                                 <Button fx:id="deselectAllBookmarksButton" text="Deselect All" onAction="#onDeselectAllBookmarks"
                                         maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
                             </HBox>
+                            <HBox spacing="5" alignment="CENTER_LEFT">
+                                <Label text="Level:" style="-fx-font-size: 11;"/>
+                                <Spinner fx:id="levelSpinner" prefWidth="60" editable="false"/>
+                                <Button fx:id="selectLevelButton" text="Select Level" onAction="#onSelectLevel"
+                                        maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                            </HBox>
                             <Separator/>
                             <VBox spacing="5">
                                 <Label text="Output Directory:" style="-fx-font-size: 12;"/>

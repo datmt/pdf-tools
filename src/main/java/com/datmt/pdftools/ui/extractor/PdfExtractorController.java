@@ -85,6 +85,10 @@ public class PdfExtractorController {
     @FXML
     private Button selectAllBookmarksButton, deselectAllBookmarksButton;
     @FXML
+    private Spinner<Integer> levelSpinner;
+    @FXML
+    private Button selectLevelButton;
+    @FXML
     private TextField outputDirField;
     @FXML
     private Button browseDirButton, exportBookmarksButton;
@@ -675,7 +679,24 @@ public class PdfExtractorController {
         }
 
         bookmarkTreeView.setRoot(root);
+
+        // Set up level spinner based on max depth
+        int maxLevel = getMaxBookmarkLevel(currentBookmarks, 0);
+        SpinnerValueFactory<Integer> valueFactory = new SpinnerValueFactory.IntegerSpinnerValueFactory(1, maxLevel + 1, 1);
+        levelSpinner.setValueFactory(valueFactory);
+
         updateBookmarkExportButton();
+    }
+
+    private int getMaxBookmarkLevel(List<PdfBookmark> bookmarks, int currentLevel) {
+        int maxLevel = currentLevel;
+        for (PdfBookmark bookmark : bookmarks) {
+            if (bookmark.hasChildren()) {
+                int childMax = getMaxBookmarkLevel(bookmark.getChildren(), currentLevel + 1);
+                maxLevel = Math.max(maxLevel, childMax);
+            }
+        }
+        return maxLevel;
     }
 
     private TreeItem<PdfBookmark> createTreeItem(PdfBookmark bookmark) {
@@ -732,6 +753,32 @@ public class PdfExtractorController {
         setAllBookmarksSelected(currentBookmarks, false);
         refreshBookmarkTree();
         updateBookmarkExportButton();
+    }
+
+    @FXML
+    private void onSelectLevel() {
+        int targetLevel = levelSpinner.getValue();
+        logger.info("Selecting bookmarks at level {}", targetLevel);
+
+        // First deselect all
+        setAllBookmarksSelected(currentBookmarks, false);
+
+        // Then select only the target level (0-indexed internally, 1-indexed for user)
+        selectBookmarksAtLevel(currentBookmarks, 0, targetLevel - 1);
+
+        refreshBookmarkTree();
+        updateBookmarkExportButton();
+    }
+
+    private void selectBookmarksAtLevel(List<PdfBookmark> bookmarks, int currentLevel, int targetLevel) {
+        for (PdfBookmark bookmark : bookmarks) {
+            if (currentLevel == targetLevel) {
+                bookmark.setSelected(true);
+            }
+            if (bookmark.hasChildren()) {
+                selectBookmarksAtLevel(bookmark.getChildren(), currentLevel + 1, targetLevel);
+            }
+        }
     }
 
     private void setAllBookmarksSelected(List<PdfBookmark> bookmarks, boolean selected) {
