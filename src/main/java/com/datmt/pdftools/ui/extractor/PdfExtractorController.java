@@ -239,7 +239,7 @@ public class PdfExtractorController {
                             pageIndex + 1,
                             thumbnail,
                             selected -> onPageThumbnailToggled(pageIndex, selected),
-                            clickedPage -> updatePreview(pageIndex + 1)
+                            clickedPage -> updatePreview(pageIndex)
                     );
 
                     // D. Store in Map
@@ -400,10 +400,25 @@ public class PdfExtractorController {
 
         renderTask.setOnSucceeded(e -> {
             Image image = renderTask.getValue();
+            if (image == null) {
+                logger.warn("Rendered image is null for page {}", pageIndex);
+                return;
+            }
             previewContainer.getChildren().clear();
             currentImageView = new ImageView(image);
             currentImageView.setPreserveRatio(true);
-            currentImageView.setFitWidth(previewContainer.getWidth() - 20);
+
+            // Use container width if available, otherwise use image width
+            double containerWidth = previewContainer.getWidth();
+            if (containerWidth > 20) {
+                currentImageView.setFitWidth(containerWidth - 20);
+            } else {
+                // Fallback: bind to container width for when layout is calculated
+                currentImageView.fitWidthProperty().bind(
+                    previewContainer.widthProperty().subtract(20)
+                );
+            }
+
             previewContainer.getChildren().add(currentImageView);
             logger.trace("Page {} preview rendered and displayed", pageIndex);
         });
