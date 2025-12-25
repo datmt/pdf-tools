@@ -1,5 +1,6 @@
 package com.datmt.pdftools.service;
 
+import com.datmt.pdftools.model.PdfBookmark;
 import com.datmt.pdftools.model.PdfDocument;
 import javafx.scene.image.Image;
 import org.slf4j.Logger;
@@ -7,6 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -19,15 +22,19 @@ public class PdfService {
     private final PdfLoader loader;
     private final PdfExtractor extractor;
     private final PdfRenderService renderService;
+    private final PdfBookmarkService bookmarkService;
 
     private PdfDocument currentDocument;
+    private List<PdfBookmark> currentBookmarks;
 
     public PdfService() {
         logger.trace("Initializing PdfService");
         this.loader = new PdfLoader();
         this.extractor = new PdfExtractor();
         this.renderService = new PdfRenderService();
+        this.bookmarkService = new PdfBookmarkService();
         this.currentDocument = null;
+        this.currentBookmarks = new ArrayList<>();
     }
 
     /**
@@ -40,6 +47,11 @@ public class PdfService {
     public PdfDocument loadPdf(File file) throws IOException {
         logger.info("PdfService.loadPdf() called for: {}", file.getName());
         currentDocument = loader.loadPdf(file);
+
+        // Extract bookmarks from the loaded document
+        currentBookmarks = bookmarkService.extractBookmarks(currentDocument.getPdfDocument());
+        logger.info("Loaded document with {} bookmarks", currentBookmarks.size());
+
         return currentDocument;
     }
 
@@ -157,6 +169,49 @@ public class PdfService {
     }
 
     /**
+     * Check if the current document has bookmarks.
+     *
+     * @return true if document has bookmarks
+     */
+    public boolean hasBookmarks() {
+        return !currentBookmarks.isEmpty();
+    }
+
+    /**
+     * Get bookmarks from the current document.
+     *
+     * @return List of top-level bookmarks (may have children)
+     */
+    public List<PdfBookmark> getBookmarks() {
+        return currentBookmarks;
+    }
+
+    /**
+     * Get the bookmark service for advanced operations.
+     *
+     * @return The PdfBookmarkService instance
+     */
+    public PdfBookmarkService getBookmarkService() {
+        return bookmarkService;
+    }
+
+    /**
+     * Extract pages for selected bookmarks into separate files.
+     *
+     * @param bookmarks List of selected bookmarks to extract
+     * @param outputDir Directory to save the extracted PDFs
+     * @throws IOException If extraction fails
+     */
+    public void extractByBookmarks(List<PdfBookmark> bookmarks, File outputDir) throws IOException {
+        if (!isDocumentLoaded()) {
+            logger.error("Cannot extract by bookmarks: no document loaded");
+            throw new IllegalStateException("No PDF document loaded");
+        }
+        logger.info("Extracting {} bookmarks to: {}", bookmarks.size(), outputDir.getAbsolutePath());
+        extractor.extractByBookmarks(currentDocument, bookmarks, outputDir);
+    }
+
+    /**
      * Close the current document and clean up resources.
      */
     public void closeDocument() {
@@ -166,6 +221,7 @@ public class PdfService {
                 currentDocument.getPdfDocument().close();
                 currentDocument.clearCache();
                 currentDocument = null;
+                currentBookmarks = new ArrayList<>();
             } catch (Exception e) {
                 logger.error("Error closing document: {}", e.getMessage(), e);
             }

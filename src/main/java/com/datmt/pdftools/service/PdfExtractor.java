@@ -1,5 +1,6 @@
 package com.datmt.pdftools.service;
 
+import com.datmt.pdftools.model.PdfBookmark;
 import com.datmt.pdftools.model.PdfDocument;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -95,5 +96,54 @@ public class PdfExtractor {
             pages.add(i);
         }
         extractPages(sourceDocument, pages, outputFile);
+    }
+
+    /**
+     * Extract pages for each bookmark into separate files.
+     *
+     * @param sourceDocument The source PDF document
+     * @param bookmarks      List of bookmarks to extract
+     * @param outputDir      Directory to save the extracted PDFs
+     * @throws IOException If extraction or file writing fails
+     */
+    public void extractByBookmarks(PdfDocument sourceDocument, List<PdfBookmark> bookmarks, File outputDir) throws IOException {
+        logger.info("Extracting {} bookmarks to directory: {}", bookmarks.size(), outputDir.getAbsolutePath());
+
+        if (!outputDir.exists()) {
+            if (!outputDir.mkdirs()) {
+                throw new IOException("Failed to create output directory: " + outputDir.getAbsolutePath());
+            }
+        }
+
+        String baseName = sourceDocument.getSourceFile().getName();
+        // Remove .pdf extension
+        if (baseName.toLowerCase().endsWith(".pdf")) {
+            baseName = baseName.substring(0, baseName.length() - 4);
+        }
+
+        int bookmarkIndex = 1;
+        for (PdfBookmark bookmark : bookmarks) {
+            String sanitizedTitle = bookmark.getSanitizedTitle();
+            if (sanitizedTitle.isEmpty()) {
+                sanitizedTitle = "Chapter_" + bookmarkIndex;
+            }
+
+            // Create filename: baseName_index_title.pdf
+            String fileName = String.format("%s_%02d_%s.pdf", baseName, bookmarkIndex, sanitizedTitle);
+            File outputFile = new File(outputDir, fileName);
+
+            logger.debug("Extracting bookmark '{}' (pages {}-{}) to {}",
+                    bookmark.getTitle(),
+                    bookmark.getPageIndex() + 1,
+                    bookmark.getEndPageIndex() + 1,
+                    outputFile.getName());
+
+            // Extract the page range for this bookmark
+            extractPageRange(sourceDocument, bookmark.getPageIndex(), bookmark.getEndPageIndex(), outputFile);
+
+            bookmarkIndex++;
+        }
+
+        logger.info("Successfully extracted {} bookmarks", bookmarks.size());
     }
 }

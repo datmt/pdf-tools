@@ -28,18 +28,48 @@
     <center>
         <HBox spacing="10" style="-fx-padding: 10;">
 
-            <!-- Left panel: Pages list -->
-            <VBox spacing="10" style="-fx-border-color: #e0e0e0; -fx-border-width: 0 1 0 0; -fx-padding: 10;">
-                <Label text="Pages" style="-fx-font-weight: bold;"/>
-                <ScrollPane fx:id="pagesScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS">
-                    <VBox fx:id="pagesListContainer" spacing="5" style="-fx-padding: 5;"/>
-                </ScrollPane>
-                <HBox spacing="5">
-                    <Button fx:id="selectAllButton" text="Select All" onAction="#onSelectAll" maxWidth="Infinity"
-                            HBox.hgrow="ALWAYS"/>
-                    <Button fx:id="deselectAllButton" text="Deselect All" onAction="#onDeselectAll" maxWidth="Infinity"
-                            HBox.hgrow="ALWAYS"/>
-                </HBox>
+            <!-- Left panel: Tabs for Pages and Bookmarks -->
+            <VBox spacing="0" style="-fx-border-color: #e0e0e0; -fx-border-width: 0 1 0 0; -fx-min-width: 220;">
+                <TabPane fx:id="leftTabPane" side="LEFT" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS"
+                         style="-fx-tab-min-width: 30; -fx-tab-max-width: 30;">
+                    <!-- Pages Tab -->
+                    <Tab fx:id="pagesTab" text="Pages">
+                        <VBox spacing="10" style="-fx-padding: 10;">
+                            <ScrollPane fx:id="pagesScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS">
+                                <VBox fx:id="pagesListContainer" spacing="5" style="-fx-padding: 5;"/>
+                            </ScrollPane>
+                            <HBox spacing="5">
+                                <Button fx:id="selectAllButton" text="Select All" onAction="#onSelectAll" maxWidth="Infinity"
+                                        HBox.hgrow="ALWAYS"/>
+                                <Button fx:id="deselectAllButton" text="Deselect All" onAction="#onDeselectAll" maxWidth="Infinity"
+                                        HBox.hgrow="ALWAYS"/>
+                            </HBox>
+                        </VBox>
+                    </Tab>
+                    <!-- Bookmarks Tab -->
+                    <Tab fx:id="bookmarksTab" text="TOC" disable="true">
+                        <VBox spacing="10" style="-fx-padding: 10;">
+                            <TreeView fx:id="bookmarkTreeView" VBox.vgrow="ALWAYS" showRoot="false"/>
+                            <HBox spacing="5">
+                                <Button fx:id="selectAllBookmarksButton" text="Select All" onAction="#onSelectAllBookmarks"
+                                        maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                                <Button fx:id="deselectAllBookmarksButton" text="Deselect All" onAction="#onDeselectAllBookmarks"
+                                        maxWidth="Infinity" HBox.hgrow="ALWAYS"/>
+                            </HBox>
+                            <Separator/>
+                            <VBox spacing="5">
+                                <Label text="Output Directory:" style="-fx-font-size: 12;"/>
+                                <HBox spacing="5">
+                                    <TextField fx:id="outputDirField" promptText="Select output folder" HBox.hgrow="ALWAYS"
+                                               disable="true"/>
+                                    <Button fx:id="browseDirButton" text="..." onAction="#onBrowseOutputDir" style="-fx-min-width: 30;"/>
+                                </HBox>
+                            </VBox>
+                            <Button fx:id="exportBookmarksButton" text="Export by Chapters" onAction="#onExportByBookmarks"
+                                    style="-fx-font-size: 12; -fx-padding: 8;" maxWidth="Infinity" disable="true"/>
+                        </VBox>
+                    </Tab>
+                </TabPane>
             </VBox>
 
             <!-- Center panel: Preview -->

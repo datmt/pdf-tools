@@ -1,5 +1,6 @@
 package com.datmt.pdftools.ui.extractor;
 
+import com.datmt.pdftools.model.PdfBookmark;
 import com.datmt.pdftools.model.PdfDocument;
 import com.datmt.pdftools.service.PdfService;
 import com.datmt.pdftools.ui.extractor.components.PageThumbnailPanel;
@@ -8,15 +9,13 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -77,24 +76,69 @@ public class PdfExtractorController {
     private Button selectAllButton, deselectAllButton;
     @FXML
     private Label notificationLabel;
+    @FXML
+    private TabPane leftTabPane;
+    @FXML
+    private Tab pagesTab, bookmarksTab;
+    @FXML
+    private TreeView<PdfBookmark> bookmarkTreeView;
+    @FXML
+    private Button selectAllBookmarksButton, deselectAllBookmarksButton;
+    @FXML
+    private TextField outputDirField;
+    @FXML
+    private Button browseDirButton, exportBookmarksButton;
     private PdfService pdfService;
     private Set<Integer> selectedPages;
     private List<PageThumbnailPanel> thumbnailPanels;
     private int currentPreviewPage;
     private ImageView currentImageView;
     private PageThumbnailPanel currentSelectedPanel;
+    private List<PdfBookmark> currentBookmarks;
     private final ExecutorService renderExecutor = Executors.newFixedThreadPool(4); // Limit threads to save RAM
     private final AtomicReference<Object> currentSessionId = new AtomicReference<>(); // Token to track active request
+
     @FXML
     public void initialize() {
         logger.trace("Initializing PdfExtractorController");
         pdfService = new PdfService();
         selectedPages = new TreeSet<>();
         thumbnailPanels = new ArrayList<>();
+        currentBookmarks = new ArrayList<>();
         currentPreviewPage = 0;
 
         setupEventHandlers();
+        setupBookmarkTreeView();
         logger.debug("Controller initialization complete");
+    }
+
+    private void setupBookmarkTreeView() {
+        // Set up the cell factory for the bookmark tree
+        bookmarkTreeView.setCellFactory(tv -> new CheckBoxTreeCell<>() {
+            @Override
+            public void updateItem(PdfBookmark item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    CheckBox checkBox = new CheckBox();
+                    checkBox.setSelected(item.isSelected());
+                    checkBox.setOnAction(e -> {
+                        item.setSelected(checkBox.isSelected());
+                        updateBookmarkExportButton();
+                    });
+
+                    String displayText = item.getTitle() + " (" + item.getPageRangeString() + ")";
+                    setText(displayText);
+                    setGraphic(checkBox);
+                }
+            }
+        });
+    }
+
+    private static class CheckBoxTreeCell<T> extends TreeCell<T> {
+        // Base class for custom tree cell with checkbox
     }
 
     private void setupEventHandlers() {
@@ -145,6 +189,9 @@ public class PdfExtractorController {
 
             removeSelectedButton.setDisable(selectedPagesList.getChildren().isEmpty());
             clearButton.setDisable(true);
+
+            // Load bookmarks if available
+            loadBookmarks();
         });
 
         loadTask.setOnFailed(event -> {
@@ -602,5 +649,169 @@ public class PdfExtractorController {
             }));
             timeline.play();
         });
+    }
+
+    // ==================== Bookmark Methods ====================
+
+    private void loadBookmarks() {
+        currentBookmarks = pdfService.getBookmarks();
+
+        if (currentBookmarks.isEmpty()) {
+            logger.debug("No bookmarks found in document");
+            bookmarksTab.setDisable(true);
+            return;
+        }
+
+        logger.info("Loaded {} bookmarks", currentBookmarks.size());
+        bookmarksTab.setDisable(false);
+
+        // Build the tree structure
+        TreeItem<PdfBookmark> root = new TreeItem<>();
+        root.setExpanded(true);
+
+        for (PdfBookmark bookmark : currentBookmarks) {
+            TreeItem<PdfBookmark> item = createTreeItem(bookmark);
+            root.getChildren().add(item);
+        }
+
+        bookmarkTreeView.setRoot(root);
+        updateBookmarkExportButton();
+    }
+
+    private TreeItem<PdfBookmark> createTreeItem(PdfBookmark bookmark) {
+        TreeItem<PdfBookmark> item = new TreeItem<>(bookmark);
+        item.setExpanded(true);
+
+        for (PdfBookmark child : bookmark.getChildren()) {
+            item.getChildren().add(createTreeItem(child));
+        }
+
+        return item;
+    }
+
+    private void updateBookmarkExportButton() {
+        List<PdfBookmark> selected = getSelectedBookmarks();
+        boolean hasSelection = !selected.isEmpty();
+        boolean hasOutputDir = !outputDirField.getText().trim().isEmpty();
+
+        exportBookmarksButton.setDisable(!hasSelection || !hasOutputDir);
+
+        if (hasSelection) {
+            exportBookmarksButton.setText("Export " + selected.size() + " Chapter(s)");
+        } else {
+            exportBookmarksButton.setText("Export by Chapters");
+        }
+    }
+
+    private List<PdfBookmark> getSelectedBookmarks() {
+        List<PdfBookmark> selected = new ArrayList<>();
+        collectSelectedBookmarks(currentBookmarks, selected);
+        return selected;
+    }
+
+    private void collectSelectedBookmarks(List<PdfBookmark> bookmarks, List<PdfBookmark> selected) {
+        for (PdfBookmark bookmark : bookmarks) {
+            if (bookmark.isSelected()) {
+                selected.add(bookmark);
+            }
+            collectSelectedBookmarks(bookmark.getChildren(), selected);
+        }
+    }
+
+    @FXML
+    private void onSelectAllBookmarks() {
+        logger.info("Selecting all bookmarks");
+        setAllBookmarksSelected(currentBookmarks, true);
+        refreshBookmarkTree();
+        updateBookmarkExportButton();
+    }
+
+    @FXML
+    private void onDeselectAllBookmarks() {
+        logger.info("Deselecting all bookmarks");
+        setAllBookmarksSelected(currentBookmarks, false);
+        refreshBookmarkTree();
+        updateBookmarkExportButton();
+    }
+
+    private void setAllBookmarksSelected(List<PdfBookmark> bookmarks, boolean selected) {
+        for (PdfBookmark bookmark : bookmarks) {
+            bookmark.setSelected(selected);
+            setAllBookmarksSelected(bookmark.getChildren(), selected);
+        }
+    }
+
+    private void refreshBookmarkTree() {
+        // Force refresh by rebuilding the tree
+        if (bookmarkTreeView.getRoot() != null) {
+            TreeItem<PdfBookmark> root = new TreeItem<>();
+            root.setExpanded(true);
+
+            for (PdfBookmark bookmark : currentBookmarks) {
+                TreeItem<PdfBookmark> item = createTreeItem(bookmark);
+                root.getChildren().add(item);
+            }
+
+            bookmarkTreeView.setRoot(root);
+        }
+    }
+
+    @FXML
+    private void onBrowseOutputDir() {
+        logger.info("User clicked browse for output directory");
+        DirectoryChooser dirChooser = new DirectoryChooser();
+        dirChooser.setTitle("Select Output Directory");
+
+        Stage stage = (Stage) browseDirButton.getScene().getWindow();
+        File selectedDir = dirChooser.showDialog(stage);
+
+        if (selectedDir != null) {
+            outputDirField.setText(selectedDir.getAbsolutePath());
+            logger.debug("Output directory selected: {}", selectedDir.getAbsolutePath());
+            updateBookmarkExportButton();
+        }
+    }
+
+    @FXML
+    private void onExportByBookmarks() {
+        logger.info("User clicked export by bookmarks");
+
+        List<PdfBookmark> selected = getSelectedBookmarks();
+        if (selected.isEmpty()) {
+            logger.warn("No bookmarks selected for export");
+            showWarning("Please select bookmarks to export");
+            return;
+        }
+
+        String outputPath = outputDirField.getText().trim();
+        if (outputPath.isEmpty()) {
+            logger.warn("No output directory specified");
+            showWarning("Please specify an output directory");
+            return;
+        }
+
+        File outputDir = new File(outputPath);
+        logger.info("Starting export of {} bookmarks to: {}", selected.size(), outputDir.getAbsolutePath());
+
+        Task<Void> exportTask = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                logger.debug("Background task: extracting by bookmarks");
+                pdfService.extractByBookmarks(selected, outputDir);
+                return null;
+            }
+        };
+
+        exportTask.setOnSucceeded(event -> {
+            logger.info("Bookmark export completed successfully");
+            showInfo("Exported " + selected.size() + " chapter(s) successfully");
+        });
+
+        exportTask.setOnFailed(event -> {
+            logger.error("Bookmark export failed", exportTask.getException());
+            showError("Export failed: " + exportTask.getException().getMessage());
+        });
+
+        new Thread(exportTask).start();
     }
 }
