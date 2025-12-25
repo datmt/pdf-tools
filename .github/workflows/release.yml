@@ -41,7 +41,7 @@ jobs:
 
           $JAVA_HOME/bin/jlink \
             --module-path "$JAVA_HOME/jmods:target/javafx-mods" \
-            --add-modules java.base,java.desktop,java.logging,java.sql,java.xml,javafx.controls,javafx.fxml,javafx.swing,javafx.graphics,javafx.base \
+            --add-modules java.base,java.desktop,java.logging,java.naming,java.sql,java.xml,javafx.controls,javafx.fxml,javafx.swing,javafx.graphics,javafx.base \
             --output target/runtime \
             --strip-debug \
             --compress zip-6 \
@@ -139,7 +139,7 @@ jobs:
 
           $JAVA_HOME/bin/jlink \
             --module-path "$JAVA_HOME/jmods:target/javafx-mods" \
-            --add-modules java.base,java.desktop,java.logging,java.sql,java.xml,javafx.controls,javafx.fxml,javafx.swing,javafx.graphics,javafx.base \
+            --add-modules java.base,java.desktop,java.logging,java.naming,java.sql,java.xml,javafx.controls,javafx.fxml,javafx.swing,javafx.graphics,javafx.base \
             --output target/runtime \
             --strip-debug \
             --compress zip-6 \
@@ -198,7 +198,7 @@ jobs:
 
           $JAVA_HOME/bin/jlink \
             --module-path "$JAVA_HOME/jmods:target/javafx-mods" \
-            --add-modules java.base,java.desktop,java.logging,java.sql,java.xml,javafx.controls,javafx.fxml,javafx.swing,javafx.graphics,javafx.base \
+            --add-modules java.base,java.desktop,java.logging,java.naming,java.sql,java.xml,javafx.controls,javafx.fxml,javafx.swing,javafx.graphics,javafx.base \
             --output target/runtime \
             --strip-debug \
             --compress zip-6 \
@@ -259,7 +259,7 @@ jobs:
 
           & "$env:JAVA_HOME\bin\jlink.exe" `
             --module-path "$env:JAVA_HOME\jmods;target\javafx-mods" `
-            --add-modules java.base,java.desktop,java.logging,java.sql,java.xml,javafx.controls,javafx.fxml,javafx.swing,javafx.graphics,javafx.base `
+            --add-modules java.base,java.desktop,java.logging,java.naming,java.sql,java.xml,javafx.controls,javafx.fxml,javafx.swing,javafx.graphics,javafx.base `
             --output target/runtime `
             --strip-debug `
             --compress zip-6 `
