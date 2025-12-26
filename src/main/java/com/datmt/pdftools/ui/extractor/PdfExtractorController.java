@@ -199,6 +199,54 @@ public class PdfExtractorController {
                 }
             }
         });
+
+        // Add click handler to jump to bookmark page
+        bookmarkTreeView.setOnMouseClicked(event -> {
+            TreeItem<PdfBookmark> selectedItem = bookmarkTreeView.getSelectionModel().getSelectedItem();
+            if (selectedItem != null && selectedItem.getValue() != null) {
+                PdfBookmark bookmark = selectedItem.getValue();
+                int pageIndex = bookmark.getPageIndex();
+                logger.debug("Bookmark clicked: '{}', jumping to page {}", bookmark.getTitle(), pageIndex + 1);
+                jumpToPage(pageIndex);
+            }
+        });
+    }
+
+    private void jumpToPage(int pageIndex) {
+        if (!pdfService.isDocumentLoaded() || pageIndex < 0 || pageIndex >= thumbnailPanels.size()) {
+            return;
+        }
+
+        // Update the preview
+        updatePreview(pageIndex);
+
+        // Scroll the thumbnail list to show this page
+        scrollToThumbnail(pageIndex);
+    }
+
+    private void scrollToThumbnail(int pageIndex) {
+        if (thumbnailPanels.isEmpty() || pageIndex < 0 || pageIndex >= thumbnailPanels.size()) {
+            return;
+        }
+
+        // Calculate scroll position to center the target panel
+        double contentHeight = pagesListContainer.getHeight();
+        double viewportHeight = pagesScrollPane.getViewportBounds().getHeight();
+
+        if (contentHeight <= viewportHeight) {
+            // All content fits, no scrolling needed
+            return;
+        }
+
+        // Get the target panel's position
+        PageThumbnailPanel targetPanel = thumbnailPanels.get(pageIndex);
+        double panelY = targetPanel.getBoundsInParent().getMinY();
+
+        // Calculate scroll value to center the panel
+        double scrollY = panelY - (viewportHeight / 2) + (PANEL_HEIGHT / 2);
+        double scrollValue = Math.max(0, Math.min(1, scrollY / (contentHeight - viewportHeight)));
+
+        pagesScrollPane.setVvalue(scrollValue);
     }
 
     private static class CheckBoxTreeCell<T> extends TreeCell<T> {
