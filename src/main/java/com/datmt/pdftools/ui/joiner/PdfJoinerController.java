@@ -476,12 +476,16 @@ public class PdfJoinerController {
         section.setRotation(newRotation);
         logger.debug("Section rotation changed: {} -> {}", currentDegrees, newDegrees);
 
+        // Find the section index to re-select after rebuild
+        int sectionIndex = sections.indexOf(section);
+
         // Rebuild to update display
         rebuildSectionList();
 
-        // Update preview if this section is selected
-        if (selectedSectionItem != null && selectedSectionItem.getSection() == section) {
-            updatePreview();
+        // Re-select the section and update preview
+        if (sectionIndex >= 0 && sectionIndex < sectionListItems.size()) {
+            SectionListItem newItem = sectionListItems.get(sectionIndex);
+            onSectionSelected(newItem);
         }
 
         showInfo("Rotated section to " + newDegrees + "\u00B0");
@@ -555,6 +559,7 @@ public class PdfJoinerController {
     private void updateGridPreview(JoinerSection section) {
         gridPreviewContainer.getChildren().clear();
         JoinerFile sourceFile = section.getSourceFile();
+        int rotation = section.getRotation().getDegrees();
 
         for (int i = section.getStartPage(); i <= section.getEndPage(); i++) {
             final int pageIndex = i;
@@ -562,7 +567,7 @@ public class PdfJoinerController {
             thumb.setPreserveRatio(true);
             thumb.setFitWidth(THUMBNAIL_SIZE);
             thumb.setFitHeight(THUMBNAIL_SIZE);
-            thumb.setStyle("-fx-border-color: #ccc;");
+            thumb.setRotate(rotation);  // Apply section rotation
 
             VBox container = new VBox(5);
             container.setStyle("-fx-padding: 5; -fx-border-color: #e0e0e0; -fx-border-radius: 3;");
@@ -617,6 +622,7 @@ public class PdfJoinerController {
             Image image = previewTask.getValue();
             singlePreviewImage.setImage(image);
             singlePreviewImage.setFitWidth(singlePreviewPane.getWidth() - 20);
+            singlePreviewImage.setRotate(section.getRotation().getDegrees());  // Apply section rotation
         });
 
         previewTask.setOnFailed(e -> {
