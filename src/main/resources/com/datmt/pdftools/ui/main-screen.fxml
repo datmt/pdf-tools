@@ -23,10 +23,6 @@
                 <Button fx:id="joinerButton" text="PDF Joiner"
                         style="-fx-font-size: 14; -fx-padding: 15 40; -fx-min-width: 200;"
                         onAction="#onJoinerClicked"/>
-
-                <Button text="PDF Splitter (Coming Soon)"
-                        style="-fx-font-size: 14; -fx-padding: 15 40; -fx-min-width: 200;"
-                        disable="true"/>
             </HBox>
         </VBox>
     </center>
