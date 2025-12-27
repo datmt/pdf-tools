@@ -34,12 +34,16 @@ public class SectionListItem extends VBox {
      * @param onSelect Callback when item is clicked/selected
      * @param onMoveUp Callback when up button is clicked
      * @param onMoveDown Callback when down button is clicked
+     * @param onRotateLeft Callback when rotate left is clicked
+     * @param onRotateRight Callback when rotate right is clicked
      * @param onRemove Callback when remove button is clicked
      */
     public SectionListItem(JoinerSection section, int index,
                            Consumer<SectionListItem> onSelect,
                            Consumer<SectionListItem> onMoveUp,
                            Consumer<SectionListItem> onMoveDown,
+                           Consumer<SectionListItem> onRotateLeft,
+                           Consumer<SectionListItem> onRotateRight,
                            Consumer<SectionListItem> onRemove) {
         this.section = section;
         this.isSelected = false;
@@ -49,7 +53,7 @@ public class SectionListItem extends VBox {
         setStyle(STYLE_NORMAL);
 
         // Header row with index and controls
-        HBox headerRow = new HBox(8);
+        HBox headerRow = new HBox(4);
         headerRow.setAlignment(Pos.CENTER_LEFT);
 
         indexLabel = new Label("Section " + index);
@@ -59,12 +63,14 @@ public class SectionListItem extends VBox {
         // Control buttons
         Button upBtn = createIconButton("\u25B2", "Move up", onMoveUp);
         Button downBtn = createIconButton("\u25BC", "Move down", onMoveDown);
+        Button rotateLeftBtn = createIconButton("\u21BA", "Rotate left", onRotateLeft);
+        Button rotateRightBtn = createIconButton("\u21BB", "Rotate right", onRotateRight);
         Button removeBtn = createIconButton("\u2715", "Remove", onRemove);
         removeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #999; -fx-font-size: 12; -fx-cursor: hand; -fx-min-width: 24;");
         removeBtn.setOnMouseEntered(e -> removeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #d32f2f; -fx-font-size: 12; -fx-cursor: hand; -fx-min-width: 24;"));
         removeBtn.setOnMouseExited(e -> removeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #999; -fx-font-size: 12; -fx-cursor: hand; -fx-min-width: 24;"));
 
-        headerRow.getChildren().addAll(indexLabel, upBtn, downBtn, removeBtn);
+        headerRow.getChildren().addAll(indexLabel, upBtn, downBtn, rotateLeftBtn, rotateRightBtn, removeBtn);
 
         // File name
         Label fileLabel = new Label(section.getSourceFile().getFileName());
@@ -75,8 +81,13 @@ public class SectionListItem extends VBox {
         Label pagesLabel = new Label(section.getPageRangeString());
         pagesLabel.setStyle("-fx-font-size: 10; -fx-text-fill: #666;");
 
-        // Page count
-        Label countLabel = new Label(section.getPageCount() + " page" + (section.getPageCount() > 1 ? "s" : ""));
+        // Page count and rotation info
+        String countText = section.getPageCount() + " page" + (section.getPageCount() > 1 ? "s" : "");
+        int rotationDegrees = section.getRotation().getDegrees();
+        if (rotationDegrees != 0) {
+            countText += " | Rotated " + rotationDegrees + "\u00B0";
+        }
+        Label countLabel = new Label(countText);
         countLabel.setStyle("-fx-font-size: 10; -fx-text-fill: #888;");
 
         getChildren().addAll(headerRow, fileLabel, pagesLabel, countLabel);

@@ -10,8 +10,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.HashMap;
 
 /**
  * Handles PDF page extraction and export operations.
@@ -28,7 +30,20 @@ public class PdfExtractor {
      * @throws IOException If extraction or file writing fails
      */
     public void extractPages(PdfDocument sourceDocument, Set<Integer> pageIndices, File outputFile) throws IOException {
-        logger.debug("Extracting pages {} from document", pageIndices);
+        extractPages(sourceDocument, pageIndices, new HashMap<>(), outputFile);
+    }
+
+    /**
+     * Extract specified pages from a PDF document with rotations and save to a new file.
+     *
+     * @param sourceDocument The source PDF document
+     * @param pageIndices    Set of 0-based page indices to extract
+     * @param rotations      Map of page index to rotation in degrees (0, 90, 180, 270)
+     * @param outputFile     Where to save the extracted PDF
+     * @throws IOException If extraction or file writing fails
+     */
+    public void extractPages(PdfDocument sourceDocument, Set<Integer> pageIndices, Map<Integer, Integer> rotations, File outputFile) throws IOException {
+        logger.debug("Extracting pages {} from document with {} rotations", pageIndices, rotations.size());
         logger.trace("Output file: {}", outputFile.getAbsolutePath());
 
         PDDocument sourcePdf = sourceDocument.getPdfDocument();
@@ -53,6 +68,17 @@ public class PdfExtractor {
             for (Integer pageIndex : sortedIndices) {
                 logger.trace("Adding page {} to new document", pageIndex);
                 PDPage page = sourcePdf.getPage(pageIndex);
+
+                // Apply rotation if specified
+                int rotation = rotations.getOrDefault(pageIndex, 0);
+                if (rotation != 0) {
+                    // Get current rotation and add the new rotation
+                    int currentRotation = page.getRotation();
+                    int newRotation = (currentRotation + rotation) % 360;
+                    page.setRotation(newRotation);
+                    logger.debug("Page {} rotation: {} + {} = {}", pageIndex, currentRotation, rotation, newRotation);
+                }
+
                 newDocument.addPage(page);
             }
 

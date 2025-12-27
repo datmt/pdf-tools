@@ -21,9 +21,11 @@ public class PageThumbnailPanel extends VBox {
 
     private CheckBox selectCheckBox;
     private ImageView imageView;
+    private Label pageLabel;
     private int pageNumber;
     private int pageIndex; // 0-based index
     private boolean imageLoaded;
+    private int rotation; // 0, 90, 180, 270
     private Consumer<Void> onThumbnailClicked;
     private static final String BORDER_UNSELECTED = "-fx-border-color: #e0e0e0; -fx-border-radius: 3; -fx-padding: 5; -fx-cursor: hand;";
     private static final String BORDER_SELECTED = "-fx-border-color: #2196F3; -fx-border-radius: 3; -fx-padding: 5; -fx-border-width: 2; -fx-cursor: hand;";
@@ -74,8 +76,10 @@ public class PageThumbnailPanel extends VBox {
         });
 
         // Page label
-        Label pageLabel = new Label("Page " + pageNumber);
+        this.pageLabel = new Label("Page " + pageNumber);
         pageLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 12;");
+
+        this.rotation = 0;
 
         getChildren().addAll(imageView, selectCheckBox, pageLabel);
 
@@ -123,5 +127,25 @@ public class PageThumbnailPanel extends VBox {
     public void clearThumbnail(Image placeholder) {
         this.imageView.setImage(placeholder);
         this.imageLoaded = false;
+    }
+
+    /**
+     * Set the rotation of the thumbnail (visual only).
+     * @param degrees Rotation in degrees (0, 90, 180, 270)
+     */
+    public void setRotation(int degrees) {
+        this.rotation = degrees;
+        imageView.setRotate(degrees);
+        // Update label to show rotation
+        if (degrees != 0) {
+            pageLabel.setText("Page " + pageNumber + " (" + degrees + "\u00B0)");
+        } else {
+            pageLabel.setText("Page " + pageNumber);
+        }
+        logger.trace("Page {} rotation set to {}", pageNumber, degrees);
+    }
+
+    public int getRotation() {
+        return rotation;
     }
 }

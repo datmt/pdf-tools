@@ -127,12 +127,24 @@ public class PdfService {
      * @throws IOException If extraction fails
      */
     public void extractPages(Set<Integer> pageIndices, File outputFile) throws IOException {
+        extractPages(pageIndices, new java.util.HashMap<>(), outputFile);
+    }
+
+    /**
+     * Extract pages to a new PDF file with optional rotations.
+     *
+     * @param pageIndices Set of 0-based page indices to extract
+     * @param rotations   Map of page index to rotation in degrees (0, 90, 180, 270)
+     * @param outputFile  Where to save the extracted PDF
+     * @throws IOException If extraction fails
+     */
+    public void extractPages(Set<Integer> pageIndices, java.util.Map<Integer, Integer> rotations, File outputFile) throws IOException {
         if (!isDocumentLoaded()) {
             logger.error("Cannot extract pages: no document loaded");
             throw new IllegalStateException("No PDF document loaded");
         }
-        logger.info("Extracting {} pages to: {}", pageIndices.size(), outputFile.getAbsolutePath());
-        extractor.extractPages(currentDocument, pageIndices, outputFile);
+        logger.info("Extracting {} pages to: {} with {} rotations", pageIndices.size(), outputFile.getAbsolutePath(), rotations.size());
+        extractor.extractPages(currentDocument, pageIndices, rotations, outputFile);
     }
 
     /**

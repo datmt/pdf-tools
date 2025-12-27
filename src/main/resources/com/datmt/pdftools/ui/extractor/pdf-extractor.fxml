@@ -13,6 +13,9 @@
             <HBox spacing="10" style="-fx-padding: 10; -fx-border-color: #cccccc; -fx-border-width: 0 0 1 0;">
                 <Button fx:id="loadButton" text="Load PDF" onAction="#onLoadPdf"/>
                 <Separator orientation="VERTICAL"/>
+                <Button fx:id="rotateLeftButton" text="↺ Rotate Left" onAction="#onRotateLeft" disable="true"/>
+                <Button fx:id="rotateRightButton" text="↻ Rotate Right" onAction="#onRotateRight" disable="true"/>
+                <Separator orientation="VERTICAL"/>
                 <Label fx:id="fileLabel" text="No file loaded" style="-fx-text-fill: #666666;"/>
                 <Region HBox.hgrow="ALWAYS"/>
                 <Label fx:id="pageCountLabel" text=""/>

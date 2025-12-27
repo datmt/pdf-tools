@@ -335,6 +335,8 @@ public class PdfJoinerController {
                 this::onSectionSelected,
                 this::onSectionMoveUp,
                 this::onSectionMoveDown,
+                this::onSectionRotateLeft,
+                this::onSectionRotateRight,
                 this::onSectionRemoved);
         sectionListItems.add(item);
         sectionListContainer.getChildren().add(item);
@@ -406,6 +408,43 @@ public class PdfJoinerController {
         int index = sectionListItems.indexOf(item);
         sections.remove(index);
         rebuildSectionList();
+    }
+
+    private void onSectionRotateLeft(SectionListItem item) {
+        rotateSectionBy(item, -90);
+    }
+
+    private void onSectionRotateRight(SectionListItem item) {
+        rotateSectionBy(item, 90);
+    }
+
+    private void rotateSectionBy(SectionListItem item, int degrees) {
+        JoinerSection section = item.getSection();
+        JoinerSection.Rotation currentRotation = section.getRotation();
+        int currentDegrees = currentRotation.getDegrees();
+        int newDegrees = (currentDegrees + degrees + 360) % 360;
+
+        // Find matching rotation enum
+        JoinerSection.Rotation newRotation = JoinerSection.Rotation.NONE;
+        for (JoinerSection.Rotation r : JoinerSection.Rotation.values()) {
+            if (r.getDegrees() == newDegrees) {
+                newRotation = r;
+                break;
+            }
+        }
+
+        section.setRotation(newRotation);
+        logger.debug("Section rotation changed: {} -> {}", currentDegrees, newDegrees);
+
+        // Rebuild to update display
+        rebuildSectionList();
+
+        // Update preview if this section is selected
+        if (selectedSectionItem != null && selectedSectionItem.getSection() == section) {
+            updatePreview();
+        }
+
+        showInfo("Rotated section to " + newDegrees + "\u00B0");
     }
 
     @FXML

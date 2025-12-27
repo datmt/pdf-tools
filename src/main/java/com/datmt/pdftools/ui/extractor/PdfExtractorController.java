@@ -103,6 +103,8 @@ public class PdfExtractorController {
     private TextField outputDirField;
     @FXML
     private Button browseDirButton, exportBookmarksButton;
+    @FXML
+    private Button rotateLeftButton, rotateRightButton;
     private PdfService pdfService;
     private Set<Integer> selectedPages;
     private List<PageThumbnailPanel> thumbnailPanels;
@@ -117,6 +119,9 @@ public class PdfExtractorController {
     private Image placeholderImage;
     private Set<Integer> renderedThumbnails = new HashSet<>();
     private Timeline scrollDebounceTimeline;
+
+    // Page rotation tracking (pageIndex -> rotation in degrees: 0, 90, 180, 270)
+    private Map<Integer, Integer> pageRotations = new HashMap<>();
 
     @FXML
     public void initialize() {
@@ -294,6 +299,7 @@ public class PdfExtractorController {
 
             selectedPages.clear();
             selectedPagesList.getChildren().clear();
+            pageRotations.clear();
             currentPreviewPage = 0;
 
             loadPageThumbnails(doc, pagesListContainer, thumbnailPanels);
@@ -301,6 +307,10 @@ public class PdfExtractorController {
 
             removeSelectedButton.setDisable(selectedPagesList.getChildren().isEmpty());
             clearButton.setDisable(true);
+
+            // Enable rotation buttons
+            rotateLeftButton.setDisable(false);
+            rotateRightButton.setDisable(false);
 
             // Load bookmarks if available
             loadBookmarks();
@@ -613,6 +623,10 @@ public class PdfExtractorController {
             currentImageView = new ImageView(image);
             currentImageView.setPreserveRatio(true);
 
+            // Apply rotation if any
+            int rotation = pageRotations.getOrDefault(pageIndex, 0);
+            currentImageView.setRotate(rotation);
+
             // Use container width if available, otherwise use image width
             double containerWidth = previewContainer.getWidth();
             if (containerWidth > 20) {
@@ -625,7 +639,7 @@ public class PdfExtractorController {
             }
 
             previewContainer.getChildren().add(currentImageView);
-            logger.trace("Page {} preview rendered and displayed", pageIndex);
+            logger.trace("Page {} preview rendered and displayed with rotation {}", pageIndex, rotation);
         });
 
         renderTask.setOnFailed(event -> {
@@ -824,11 +838,20 @@ public class PdfExtractorController {
         File outputFile = new File(outputPath);
         logger.info("Starting export to: {} with {} pages", outputFile.getAbsolutePath(), selectedPages.size());
 
+        // Collect rotations for selected pages
+        Map<Integer, Integer> selectedRotations = new HashMap<>();
+        for (int pageIndex : selectedPages) {
+            int rotation = pageRotations.getOrDefault(pageIndex, 0);
+            if (rotation != 0) {
+                selectedRotations.put(pageIndex, rotation);
+            }
+        }
+
         Task<Void> exportTask = new Task<>() {
             @Override
             protected Void call() throws Exception {
-                logger.debug("Background task: extracting pages");
-                pdfService.extractPages(new HashSet<>(selectedPages), outputFile);
+                logger.debug("Background task: extracting pages with {} rotations", selectedRotations.size());
+                pdfService.extractPages(new HashSet<>(selectedPages), selectedRotations, outputFile);
                 return null;
             }
         };
@@ -844,6 +867,62 @@ public class PdfExtractorController {
         });
 
         new Thread(exportTask).start();
+    }
+
+    @FXML
+    private void onRotateLeft() {
+        rotateSelectedPages(-90);
+    }
+
+    @FXML
+    private void onRotateRight() {
+        rotateSelectedPages(90);
+    }
+
+    private void rotateSelectedPages(int degrees) {
+        if (!pdfService.isDocumentLoaded()) {
+            return;
+        }
+
+        // Get pages to rotate: selected pages, or current preview page if none selected
+        Set<Integer> pagesToRotate = new HashSet<>(selectedPages);
+        if (pagesToRotate.isEmpty() && currentPreviewPage >= 0) {
+            pagesToRotate.add(currentPreviewPage);
+        }
+
+        if (pagesToRotate.isEmpty()) {
+            showWarning("Please select pages to rotate");
+            return;
+        }
+
+        logger.info("Rotating {} pages by {} degrees", pagesToRotate.size(), degrees);
+
+        for (int pageIndex : pagesToRotate) {
+            int currentRotation = pageRotations.getOrDefault(pageIndex, 0);
+            int newRotation = (currentRotation + degrees + 360) % 360;
+            pageRotations.put(pageIndex, newRotation);
+            logger.debug("Page {} rotation: {} -> {}", pageIndex + 1, currentRotation, newRotation);
+
+            // Update thumbnail display
+            updateThumbnailRotation(pageIndex);
+        }
+
+        // Refresh preview if current page was rotated
+        if (pagesToRotate.contains(currentPreviewPage)) {
+            updatePreview(currentPreviewPage);
+        }
+
+        showInfo("Rotated " + pagesToRotate.size() + " page(s)");
+    }
+
+    private void updateThumbnailRotation(int pageIndex) {
+        if (pageIndex < 0 || pageIndex >= thumbnailPanels.size()) {
+            return;
+        }
+
+        PageThumbnailPanel panel = thumbnailPanels.get(pageIndex);
+        int rotation = pageRotations.getOrDefault(pageIndex, 0);
+        panel.setRotation(rotation);
     }
 
     private void showError(String message) {

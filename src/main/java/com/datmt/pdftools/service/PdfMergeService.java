@@ -118,9 +118,20 @@ public class PdfMergeService {
                 if (sourceFile.isPdf()) {
                     // Import PDF pages (importPage clones the page with all resources including fonts)
                     PDDocument sourcePdf = sourceFile.getPdfDocument();
+                    int sectionRotation = section.getRotation().getDegrees();
+
                     for (int i = section.getStartPage(); i <= section.getEndPage(); i++) {
                         PDPage page = sourcePdf.getPage(i);
                         PDPage importedPage = outputDoc.importPage(page);
+
+                        // Apply rotation if specified for this section
+                        if (sectionRotation != 0) {
+                            int currentRotation = importedPage.getRotation();
+                            int newRotation = (currentRotation + sectionRotation) % 360;
+                            importedPage.setRotation(newRotation);
+                            logger.debug("Applied rotation {} to page {} (total: {})", sectionRotation, i, newRotation);
+                        }
+
                         processedPages++;
                         if (callback != null) {
                             callback.onProgress(processedPages, totalPages);
