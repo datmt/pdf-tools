@@ -16,6 +16,7 @@ public class MainScreenController {
     private static final Logger logger = LoggerFactory.getLogger(MainScreenController.class);
 
     public Button extractorButton;
+    public Button joinerButton;
 
     public void onExtractorClicked() {
         logger.info("User clicked PDF Extractor button");
@@ -34,6 +35,26 @@ public class MainScreenController {
             logger.info("PDF Extractor window opened");
         } catch (IOException e) {
             logger.error("Failed to load PDF Extractor window", e);
+        }
+    }
+
+    public void onJoinerClicked() {
+        logger.info("User clicked PDF Joiner button");
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(
+                    getClass().getResource("/com/datmt/pdftools/ui/joiner/pdf-joiner.fxml"));
+            Scene scene = new Scene(fxmlLoader.load(), 1400, 800);
+
+            Stage stage = new Stage();
+            stage.setTitle("PDF Joiner");
+            stage.setScene(scene);
+            stage.setMinWidth(1400);
+            stage.setMinHeight(800);
+            stage.show();
+
+            logger.info("PDF Joiner window opened");
+        } catch (IOException e) {
+            logger.error("Failed to load PDF Joiner window", e);
         }
     }
 }

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.geometry.Insets?>
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            xmlns="http://javafx.com/javafx"
+            fx:controller="com.datmt.pdftools.ui.joiner.PdfJoinerController"
+            style="-fx-font-family: 'Segoe UI';">
+
+    <!-- Top toolbar -->
+    <top>
+        <VBox spacing="0">
+            <HBox spacing="10" style="-fx-padding: 10; -fx-border-color: #cccccc; -fx-border-width: 0 0 1 0;">
+                <Button fx:id="addFilesButton" text="Add Files" onAction="#onAddFiles"/>
+                <Separator orientation="VERTICAL"/>
+                <Label fx:id="fileCountLabel" text="No files loaded" style="-fx-text-fill: #666666;"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button fx:id="joinButton" text="Join PDF" onAction="#onJoin"
+                        style="-fx-font-weight: bold;" disable="true"/>
+            </HBox>
+            <Label fx:id="notificationLabel" text=""
+                   style="-fx-padding: 8; -fx-font-size: 12; -fx-text-fill: white;"
+                   wrapText="true"
+                   visible="false"/>
+        </VBox>
+    </top>
+
+    <!-- Main content: 3-panel layout -->
+    <center>
+        <HBox spacing="0" style="-fx-padding: 10;">
+
+            <!-- Left panel: File List (20%) -->
+            <VBox spacing="10" style="-fx-border-color: #e0e0e0; -fx-border-width: 0 1 0 0; -fx-padding: 10; -fx-min-width: 220; -fx-pref-width: 220;">
+                <Label text="Files" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
+
+                <ScrollPane fx:id="fileListScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS"
+                            style="-fx-background-color: transparent;">
+                    <VBox fx:id="fileListContainer" spacing="5" style="-fx-padding: 5;"/>
+                </ScrollPane>
+
+                <Separator/>
+
+                <!-- Add Section controls -->
+                <VBox spacing="5">
+                    <Label text="Add Section" style="-fx-font-weight: bold; -fx-font-size: 12;"/>
+                    <HBox spacing="5">
+                        <Label text="Pages:" style="-fx-font-size: 11;" alignment="CENTER_LEFT"/>
+                        <TextField fx:id="pageRangeField" promptText="e.g. 1-5 or all" HBox.hgrow="ALWAYS"/>
+                    </HBox>
+                    <Label text="Use 'all' for all pages, or ranges like '1-5'"
+                           style="-fx-font-size: 9; -fx-text-fill: #999;"/>
+                    <Button fx:id="addSectionButton" text="Add to Sections" onAction="#onAddSection"
+                            maxWidth="Infinity" disable="true"/>
+                </VBox>
+            </VBox>
+
+            <!-- Center panel: Section List (25-30%) -->
+            <VBox spacing="10" style="-fx-border-color: #e0e0e0; -fx-border-width: 0 1 0 0; -fx-padding: 10; -fx-min-width: 250; -fx-pref-width: 280;">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Sections" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="totalPagesLabel" text="0 pages" style="-fx-font-size: 11; -fx-text-fill: #666;"/>
+                </HBox>
+
+                <ScrollPane fx:id="sectionListScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS"
+                            style="-fx-background-color: transparent;">
+                    <VBox fx:id="sectionListContainer" spacing="5" style="-fx-padding: 5;"/>
+                </ScrollPane>
+
+                <HBox spacing="5">
+                    <Button fx:id="clearSectionsButton" text="Clear All" onAction="#onClearSections"
+                            maxWidth="Infinity" HBox.hgrow="ALWAYS" disable="true"/>
+                </HBox>
+            </VBox>
+
+            <!-- Right panel: Preview -->
+            <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-padding: 10;">
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label text="Preview" style="-fx-font-weight: bold; -fx-font-size: 14;"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <ToggleButton fx:id="gridViewToggle" text="Grid" onAction="#onToggleGridView"/>
+                    <ToggleButton fx:id="singleViewToggle" text="Single" onAction="#onToggleSingleView"/>
+                </HBox>
+
+                <!-- Grid View -->
+                <ScrollPane fx:id="gridPreviewScrollPane" fitToWidth="true" VBox.vgrow="ALWAYS"
+                            style="-fx-background-color: transparent;">
+                    <FlowPane fx:id="gridPreviewContainer" hgap="10" vgap="10"
+                              style="-fx-padding: 10; -fx-background-color: #f5f5f5;"/>
+                </ScrollPane>
+
+                <!-- Single Page View (hidden by default) -->
+                <VBox fx:id="singlePreviewContainer" spacing="10" VBox.vgrow="ALWAYS" visible="false" managed="false">
+                    <ScrollPane fx:id="singlePreviewScrollPane" fitToWidth="true" fitToHeight="true" VBox.vgrow="ALWAYS">
+                        <StackPane fx:id="singlePreviewPane"
+                                   style="-fx-border-color: #e0e0e0; -fx-background-color: #f5f5f5;">
+                            <ImageView fx:id="singlePreviewImage" preserveRatio="true"/>
+                        </StackPane>
+                    </ScrollPane>
+                    <HBox spacing="5" alignment="CENTER">
+                        <Button fx:id="prevPageButton" text="Previous" onAction="#onPreviousPage"/>
+                        <Label fx:id="currentPageLabel" text="Page 1 of 1"
+                               style="-fx-min-width: 100; -fx-text-alignment: center;"/>
+                        <Button fx:id="nextPageButton" text="Next" onAction="#onNextPage"/>
+                    </HBox>
+                </VBox>
+
+                <Separator/>
+
+                <!-- Image Options (shown when image is selected) -->
+                <VBox fx:id="imageOptionsPane" spacing="8" visible="false" managed="false"
+                      style="-fx-padding: 10; -fx-background-color: #f9f9f9; -fx-border-color: #e0e0e0; -fx-border-radius: 3;">
+                    <Label text="Image Options" style="-fx-font-weight: bold; -fx-font-size: 12;"/>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Page Size:" style="-fx-font-size: 11; -fx-min-width: 70;"/>
+                        <ComboBox fx:id="pageSizeCombo" prefWidth="120"/>
+                    </HBox>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Fit:" style="-fx-font-size: 11; -fx-min-width: 70;"/>
+                        <ComboBox fx:id="fitOptionCombo" prefWidth="120"/>
+                    </HBox>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Label text="Rotation:" style="-fx-font-size: 11; -fx-min-width: 70;"/>
+                        <ComboBox fx:id="rotationCombo" prefWidth="120"/>
+                    </HBox>
+                </VBox>
+
+                <!-- Output controls -->
+                <VBox spacing="5">
+                    <Label text="Output File:" style="-fx-font-size: 12;"/>
+                    <HBox spacing="5">
+                        <TextField fx:id="outputFileField" promptText="Output file name" HBox.hgrow="ALWAYS"
+                                   disable="true"/>
+                        <Button fx:id="browseButton" text="Browse" onAction="#onBrowseOutput"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+
+        </HBox>
+    </center>
+</BorderPane>
