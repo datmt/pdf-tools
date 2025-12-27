@@ -24,6 +24,16 @@
                         style="-fx-font-size: 14; -fx-padding: 15 40; -fx-min-width: 200;"
                         onAction="#onJoinerClicked"/>
             </HBox>
+
+            <HBox spacing="20" alignment="CENTER">
+                <Button fx:id="compressorButton" text="PDF Compress"
+                        style="-fx-font-size: 14; -fx-padding: 15 40; -fx-min-width: 200;"
+                        onAction="#onCompressorClicked"/>
+
+                <Button fx:id="securityButton" text="PDF Security"
+                        style="-fx-font-size: 14; -fx-padding: 15 40; -fx-min-width: 200;"
+                        onAction="#onSecurityClicked"/>
+            </HBox>
         </VBox>
     </center>
 </BorderPane>

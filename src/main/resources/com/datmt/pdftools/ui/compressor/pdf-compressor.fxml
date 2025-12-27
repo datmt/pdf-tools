@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            xmlns="http://javafx.com/javafx"
+            fx:controller="com.datmt.pdftools.ui.compressor.PdfCompressorController"
+            style="-fx-font-family: 'Segoe UI';">
+
+    <!-- Top Toolbar -->
+    <top>
+        <ToolBar style="-fx-background-color: #f0f0f0; -fx-padding: 8;">
+            <Button fx:id="addFilesButton" text="Add Files" onAction="#onAddFiles"
+                    style="-fx-font-size: 13;"/>
+            <Button fx:id="removeFileButton" text="Remove" onAction="#onRemoveFile"
+                    style="-fx-font-size: 13;" disable="true"/>
+            <Button fx:id="clearAllButton" text="Clear All" onAction="#onClearAll"
+                    style="-fx-font-size: 13;" disable="true"/>
+            <Pane HBox.hgrow="ALWAYS"/>
+            <Button fx:id="compressButton" text="Compress All" onAction="#onCompress"
+                    style="-fx-font-size: 14; -fx-font-weight: bold; -fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 8 20;"
+                    disable="true"/>
+        </ToolBar>
+    </top>
+
+    <!-- Main Content -->
+    <center>
+        <HBox spacing="20" style="-fx-padding: 20;">
+
+            <!-- Left: Files List -->
+            <VBox spacing="10" HBox.hgrow="ALWAYS" minWidth="400">
+                <Label text="Files to Compress" style="-fx-font-size: 16; -fx-font-weight: bold;"/>
+
+                <ScrollPane fx:id="filesScrollPane" VBox.vgrow="ALWAYS"
+                            style="-fx-background-color: white; -fx-border-color: #cccccc; -fx-border-radius: 4;">
+                    <VBox fx:id="filesContainer" spacing="5" style="-fx-padding: 10;">
+                        <!-- File items will be added here -->
+                    </VBox>
+                </ScrollPane>
+
+                <HBox spacing="10" alignment="CENTER_LEFT">
+                    <Label fx:id="totalSizeLabel" text="Total: 0 files, 0 B"
+                           style="-fx-font-size: 13; -fx-text-fill: #666666;"/>
+                </HBox>
+
+                <!-- Results Section -->
+                <VBox fx:id="resultsSection" spacing="10" visible="false" managed="false"
+                      style="-fx-padding: 15; -fx-background-color: #f5f5f5; -fx-border-color: #cccccc; -fx-border-radius: 4;">
+                    <Label text="Compression Results" style="-fx-font-size: 14; -fx-font-weight: bold;"/>
+                    <ScrollPane fx:id="resultsScrollPane" maxHeight="150"
+                                style="-fx-background-color: transparent;">
+                        <VBox fx:id="resultsContainer" spacing="3"/>
+                    </ScrollPane>
+                    <Separator/>
+                    <HBox spacing="20" alignment="CENTER_LEFT">
+                        <Label fx:id="totalOriginalLabel" text="Original: 0 B" style="-fx-font-size: 13;"/>
+                        <Label fx:id="totalCompressedLabel" text="Compressed: 0 B" style="-fx-font-size: 13;"/>
+                        <Label fx:id="totalSavingsLabel" text="Saved: 0%"
+                               style="-fx-font-size: 13; -fx-font-weight: bold; -fx-text-fill: #4CAF50;"/>
+                    </HBox>
+                </VBox>
+            </VBox>
+
+            <!-- Right: Settings -->
+            <VBox spacing="15" minWidth="280" maxWidth="280">
+                <Label text="Compression Settings" style="-fx-font-size: 16; -fx-font-weight: bold;"/>
+
+                <VBox spacing="10" style="-fx-padding: 15; -fx-background-color: #f5f5f5; -fx-border-color: #cccccc; -fx-border-radius: 4;">
+                    <Label text="Compression Level" style="-fx-font-size: 13; -fx-font-weight: bold;"/>
+
+                    <RadioButton fx:id="lowCompressionRadio" text="Low (best quality)"
+                                 style="-fx-font-size: 12;">
+                        <toggleGroup>
+                            <ToggleGroup fx:id="compressionLevelGroup"/>
+                        </toggleGroup>
+                    </RadioButton>
+                    <Label text="Minimal compression, preserves image quality"
+                           style="-fx-font-size: 11; -fx-text-fill: #888888; -fx-padding: 0 0 0 20;"/>
+
+                    <RadioButton fx:id="mediumCompressionRadio" text="Medium (balanced)" selected="true"
+                                 toggleGroup="$compressionLevelGroup"
+                                 style="-fx-font-size: 12;"/>
+                    <Label text="Good balance between size and quality"
+                           style="-fx-font-size: 11; -fx-text-fill: #888888; -fx-padding: 0 0 0 20;"/>
+
+                    <RadioButton fx:id="highCompressionRadio" text="High (smallest size)"
+                                 toggleGroup="$compressionLevelGroup"
+                                 style="-fx-font-size: 12;"/>
+                    <Label text="Maximum compression, lower image quality"
+                           style="-fx-font-size: 11; -fx-text-fill: #888888; -fx-padding: 0 0 0 20;"/>
+                </VBox>
+
+                <VBox spacing="10" style="-fx-padding: 15; -fx-background-color: #f5f5f5; -fx-border-color: #cccccc; -fx-border-radius: 4;">
+                    <Label text="Image Quality" style="-fx-font-size: 13; -fx-font-weight: bold;"/>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <Slider fx:id="imageQualitySlider" min="10" max="100" value="65"
+                                showTickLabels="true" showTickMarks="true"
+                                majorTickUnit="30" minorTickCount="2"
+                                HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="imageQualityLabel" text="65%" minWidth="40"
+                               style="-fx-font-size: 12;"/>
+                    </HBox>
+                </VBox>
+
+                <VBox spacing="10" style="-fx-padding: 15; -fx-background-color: #f5f5f5; -fx-border-color: #cccccc; -fx-border-radius: 4;">
+                    <Label text="Additional Options" style="-fx-font-size: 13; -fx-font-weight: bold;"/>
+                    <CheckBox fx:id="removeMetadataCheck" text="Remove metadata"
+                              style="-fx-font-size: 12;"/>
+                    <Label text="Removes author, title, dates, etc."
+                           style="-fx-font-size: 11; -fx-text-fill: #888888; -fx-padding: 0 0 0 20;"/>
+                    <CheckBox fx:id="removeBookmarksCheck" text="Remove bookmarks"
+                              style="-fx-font-size: 12;"/>
+                    <Label text="Removes table of contents/bookmarks"
+                           style="-fx-font-size: 11; -fx-text-fill: #888888; -fx-padding: 0 0 0 20;"/>
+                </VBox>
+
+                <VBox spacing="10" style="-fx-padding: 15; -fx-background-color: #f5f5f5; -fx-border-color: #cccccc; -fx-border-radius: 4;">
+                    <Label text="Output" style="-fx-font-size: 13; -fx-font-weight: bold;"/>
+                    <CheckBox fx:id="addSuffixCheck" text="Add '_compressed' suffix" selected="true"
+                              style="-fx-font-size: 12;"/>
+                    <CheckBox fx:id="overwriteCheck" text="Overwrite original files"
+                              style="-fx-font-size: 12;"/>
+                    <Label text="Warning: Cannot be undone!"
+                           style="-fx-font-size: 11; -fx-text-fill: #cc0000; -fx-padding: 0 0 0 20;"/>
+                </VBox>
+
+                <!-- Progress -->
+                <VBox fx:id="progressSection" spacing="5" visible="false" managed="false"
+                      style="-fx-padding: 15; -fx-background-color: #e3f2fd; -fx-border-color: #2196F3; -fx-border-radius: 4;">
+                    <Label fx:id="progressLabel" text="Compressing..."
+                           style="-fx-font-size: 13; -fx-font-weight: bold;"/>
+                    <ProgressBar fx:id="progressBar" progress="0" prefWidth="250"/>
+                    <Label fx:id="progressDetailLabel" text=""
+                           style="-fx-font-size: 11; -fx-text-fill: #666666;"/>
+                </VBox>
+            </VBox>
+        </HBox>
+    </center>
+</BorderPane>

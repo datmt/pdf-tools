@@ -17,6 +17,8 @@ public class MainScreenController {
 
     public Button extractorButton;
     public Button joinerButton;
+    public Button compressorButton;
+    public Button securityButton;
 
     public void onExtractorClicked() {
         logger.info("User clicked PDF Extractor button");
@@ -55,6 +57,46 @@ public class MainScreenController {
             logger.info("PDF Joiner window opened");
         } catch (IOException e) {
             logger.error("Failed to load PDF Joiner window", e);
+        }
+    }
+
+    public void onCompressorClicked() {
+        logger.info("User clicked PDF Compressor button");
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(
+                    getClass().getResource("/com/datmt/pdftools/ui/compressor/pdf-compressor.fxml"));
+            Scene scene = new Scene(fxmlLoader.load(), 900, 700);
+
+            Stage stage = new Stage();
+            stage.setTitle("PDF Compressor");
+            stage.setScene(scene);
+            stage.setMinWidth(900);
+            stage.setMinHeight(700);
+            stage.show();
+
+            logger.info("PDF Compressor window opened");
+        } catch (IOException e) {
+            logger.error("Failed to load PDF Compressor window", e);
+        }
+    }
+
+    public void onSecurityClicked() {
+        logger.info("User clicked PDF Security button");
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(
+                    getClass().getResource("/com/datmt/pdftools/ui/security/pdf-security.fxml"));
+            Scene scene = new Scene(fxmlLoader.load(), 800, 600);
+
+            Stage stage = new Stage();
+            stage.setTitle("PDF Security");
+            stage.setScene(scene);
+            stage.setMinWidth(800);
+            stage.setMinHeight(600);
+            stage.show();
+
+            logger.info("PDF Security window opened");
+        } catch (IOException e) {
+            logger.error("Failed to load PDF Security window", e);
         }
     }
 }

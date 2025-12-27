@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            xmlns="http://javafx.com/javafx"
+            fx:controller="com.datmt.pdftools.ui.security.PdfSecurityController"
+            style="-fx-font-family: 'Segoe UI';">
+
+    <!-- Top Toolbar -->
+    <top>
+        <ToolBar style="-fx-background-color: #f0f0f0; -fx-padding: 8;">
+            <Button fx:id="selectFileButton" text="Select PDF" onAction="#onSelectFile"
+                    style="-fx-font-size: 13;"/>
+            <Separator orientation="VERTICAL"/>
+            <Label fx:id="fileNameLabel" text="No file selected"
+                   style="-fx-font-size: 13; -fx-text-fill: #666666;"/>
+            <Pane HBox.hgrow="ALWAYS"/>
+            <Label fx:id="statusLabel" text=""
+                   style="-fx-font-size: 13; -fx-font-weight: bold;"/>
+        </ToolBar>
+    </top>
+
+    <!-- Main Content -->
+    <center>
+        <HBox spacing="30" style="-fx-padding: 30;" alignment="TOP_CENTER">
+
+            <!-- Left: Add Protection -->
+            <VBox spacing="15" minWidth="350" maxWidth="350">
+                <Label text="Add Password Protection" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+
+                <VBox spacing="15" style="-fx-padding: 20; -fx-background-color: #f5f5f5; -fx-border-color: #cccccc; -fx-border-radius: 8; -fx-background-radius: 8;">
+
+                    <VBox spacing="5">
+                        <Label text="User Password (to open document)"
+                               style="-fx-font-size: 13; -fx-font-weight: bold;"/>
+                        <PasswordField fx:id="userPasswordField" promptText="Leave empty for no password"
+                                      style="-fx-font-size: 13;"/>
+                        <Label text="Users must enter this password to open the PDF"
+                               style="-fx-font-size: 11; -fx-text-fill: #888888;"/>
+                    </VBox>
+
+                    <VBox spacing="5">
+                        <Label text="Owner Password (required)"
+                               style="-fx-font-size: 13; -fx-font-weight: bold;"/>
+                        <PasswordField fx:id="ownerPasswordField" promptText="Enter owner password"
+                                      style="-fx-font-size: 13;"/>
+                        <Label text="Required to change permissions or remove protection"
+                               style="-fx-font-size: 11; -fx-text-fill: #888888;"/>
+                    </VBox>
+
+                    <Separator/>
+
+                    <VBox spacing="8">
+                        <Label text="Permissions" style="-fx-font-size: 13; -fx-font-weight: bold;"/>
+                        <CheckBox fx:id="allowPrintingCheck" text="Allow printing" selected="true"
+                                  style="-fx-font-size: 12;"/>
+                        <CheckBox fx:id="allowCopyingCheck" text="Allow copying text and images" selected="true"
+                                  style="-fx-font-size: 12;"/>
+                        <CheckBox fx:id="allowEditingCheck" text="Allow editing"
+                                  style="-fx-font-size: 12;"/>
+                        <CheckBox fx:id="allowFormsCheck" text="Allow filling forms" selected="true"
+                                  style="-fx-font-size: 12;"/>
+                    </VBox>
+
+                    <Separator/>
+
+                    <Button fx:id="protectButton" text="Protect PDF" onAction="#onProtect"
+                            disable="true" maxWidth="Infinity"
+                            style="-fx-font-size: 14; -fx-font-weight: bold; -fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 10;"/>
+                </VBox>
+            </VBox>
+
+            <!-- Right: Remove Protection -->
+            <VBox spacing="15" minWidth="350" maxWidth="350">
+                <Label text="Remove Password Protection" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+
+                <VBox spacing="15" style="-fx-padding: 20; -fx-background-color: #fff3e0; -fx-border-color: #ff9800; -fx-border-radius: 8; -fx-background-radius: 8;">
+
+                    <VBox spacing="5">
+                        <Label text="Current Password"
+                               style="-fx-font-size: 13; -fx-font-weight: bold;"/>
+                        <PasswordField fx:id="currentPasswordField" promptText="Enter current password"
+                                      style="-fx-font-size: 13;"/>
+                        <Label text="Enter the password used to protect this PDF"
+                               style="-fx-font-size: 11; -fx-text-fill: #888888;"/>
+                    </VBox>
+
+                    <Label fx:id="verifyStatusLabel" text=""
+                           style="-fx-font-size: 12;"/>
+
+                    <Button fx:id="verifyButton" text="Verify Password" onAction="#onVerifyPassword"
+                            disable="true" maxWidth="Infinity"
+                            style="-fx-font-size: 13; -fx-padding: 8;"/>
+
+                    <Separator/>
+
+                    <Button fx:id="removeProtectionButton" text="Remove Protection" onAction="#onRemoveProtection"
+                            disable="true" maxWidth="Infinity"
+                            style="-fx-font-size: 14; -fx-font-weight: bold; -fx-background-color: #ff5722; -fx-text-fill: white; -fx-padding: 10;"/>
+                </VBox>
+
+                <!-- Current PDF Info -->
+                <VBox fx:id="pdfInfoSection" spacing="10" visible="false" managed="false"
+                      style="-fx-padding: 15; -fx-background-color: #e8f5e9; -fx-border-color: #4caf50; -fx-border-radius: 8; -fx-background-radius: 8;">
+                    <Label text="Current PDF Information" style="-fx-font-size: 13; -fx-font-weight: bold;"/>
+                    <Label fx:id="encryptionStatusLabel" text="Status: Unknown"
+                           style="-fx-font-size: 12;"/>
+                    <Label fx:id="permissionsInfoLabel" text=""
+                           style="-fx-font-size: 11; -fx-text-fill: #666666;" wrapText="true"/>
+                </VBox>
+            </VBox>
+        </HBox>
+    </center>
+
+    <!-- Bottom: Output options -->
+    <bottom>
+        <VBox spacing="10" style="-fx-padding: 20; -fx-background-color: #fafafa; -fx-border-color: #e0e0e0; -fx-border-width: 1 0 0 0;">
+            <HBox spacing="15" alignment="CENTER_LEFT">
+                <Label text="Output:" style="-fx-font-size: 13; -fx-font-weight: bold;"/>
+                <RadioButton fx:id="saveAsNewRadio" text="Save as new file" selected="true"
+                             style="-fx-font-size: 12;">
+                    <toggleGroup>
+                        <ToggleGroup fx:id="outputToggleGroup"/>
+                    </toggleGroup>
+                </RadioButton>
+                <RadioButton fx:id="overwriteOriginalRadio" text="Overwrite original"
+                             toggleGroup="$outputToggleGroup"
+                             style="-fx-font-size: 12;"/>
+                <Label text="(Warning: Cannot be undone!)"
+                       style="-fx-font-size: 11; -fx-text-fill: #cc0000;"/>
+            </HBox>
+
+            <!-- Progress/Result -->
+            <HBox fx:id="resultSection" spacing="10" alignment="CENTER_LEFT" visible="false" managed="false">
+                <Label fx:id="resultLabel" text=""
+                       style="-fx-font-size: 13;"/>
+            </HBox>
+        </VBox>
+    </bottom>
+</BorderPane>
