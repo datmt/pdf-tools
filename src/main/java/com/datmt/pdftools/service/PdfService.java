@@ -46,6 +46,10 @@ public class PdfService {
      */
     public PdfDocument loadPdf(File file) throws IOException {
         logger.info("PdfService.loadPdf() called for: {}", file.getName());
+
+        // Close previous document if any
+        closeDocument();
+
         currentDocument = loader.loadPdf(file);
 
         // Extract bookmarks from the loaded document

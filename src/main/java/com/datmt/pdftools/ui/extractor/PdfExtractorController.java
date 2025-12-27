@@ -123,6 +123,9 @@ public class PdfExtractorController {
     // Page rotation tracking (pageIndex -> rotation in degrees: 0, 90, 180, 270)
     private Map<Integer, Integer> pageRotations = new HashMap<>();
 
+    // Flag to suppress updates during bulk operations (Select All/Deselect All)
+    private boolean isBulkOperation = false;
+
     @FXML
     public void initialize() {
         logger.trace("Initializing PdfExtractorController");
@@ -135,7 +138,43 @@ public class PdfExtractorController {
         setupEventHandlers();
         setupBookmarkTreeView();
         setupLazyLoading();
+        setupWindowCloseHandler();
         logger.debug("Controller initialization complete");
+    }
+
+    private void setupWindowCloseHandler() {
+        // Register cleanup when window is closed
+        Platform.runLater(() -> {
+            if (loadButton.getScene() != null && loadButton.getScene().getWindow() != null) {
+                loadButton.getScene().getWindow().setOnCloseRequest(event -> cleanup());
+            }
+        });
+    }
+
+    /**
+     * Clean up resources when the window is closed.
+     */
+    public void cleanup() {
+        logger.info("Cleaning up PdfExtractorController resources");
+
+        // Shut down the executor service
+        renderExecutor.shutdownNow();
+
+        // Close the PDF document
+        pdfService.closeDocument();
+
+        // Clear thumbnail panels and caches
+        thumbnailPanels.clear();
+        renderedThumbnails.clear();
+        pagesListContainer.getChildren().clear();
+        previewContainer.getChildren().clear();
+
+        // Stop any pending debounce
+        if (scrollDebounceTimeline != null) {
+            scrollDebounceTimeline.stop();
+        }
+
+        logger.info("Cleanup complete");
     }
 
     private void setupLazyLoading() {
@@ -572,6 +611,11 @@ public class PdfExtractorController {
     }
 
     private void onPageThumbnailToggled(int pageIndex, boolean selected) {
+        // Skip updates during bulk operations (Select All/Deselect All)
+        if (isBulkOperation) {
+            return;
+        }
+
         logger.debug("Page {} thumbnail toggled, selected: {}", pageIndex, selected);
         if (selected) {
             selectedPages.add(pageIndex);
@@ -747,15 +791,70 @@ public class PdfExtractorController {
         logger.debug("Updating selected pages list with {} pages", selectedPages.size());
         selectedPagesList.getChildren().clear();
 
-        for (Integer pageNum : selectedPages) {
-            Label label = new Label((pageNum + 1) + "");
-            label.setStyle("-fx-padding: 5; -fx-border-color: #cccccc; -fx-border-radius: 3;");
-            selectedPagesList.getChildren().add(label);
+        int count = selectedPages.size();
+        if (count == 0) {
+            // Show nothing
+        } else if (count > 50) {
+            // For large selections, show a summary instead of individual labels
+            Label summaryLabel = new Label(count + " pages selected");
+            summaryLabel.setStyle("-fx-padding: 5; -fx-font-weight: bold;");
+            selectedPagesList.getChildren().add(summaryLabel);
+
+            // Show condensed range representation
+            String rangeStr = formatPageRanges(selectedPages);
+            if (rangeStr.length() <= 100) {
+                Label rangeLabel = new Label(rangeStr);
+                rangeLabel.setStyle("-fx-padding: 5; -fx-font-size: 10; -fx-text-fill: #666;");
+                rangeLabel.setWrapText(true);
+                selectedPagesList.getChildren().add(rangeLabel);
+            }
+        } else {
+            // For small selections, show individual pages
+            for (Integer pageNum : selectedPages) {
+                Label label = new Label((pageNum + 1) + "");
+                label.setStyle("-fx-padding: 5; -fx-border-color: #cccccc; -fx-border-radius: 3;");
+                selectedPagesList.getChildren().add(label);
+            }
         }
 
-        removeSelectedButton.setDisable(selectedPagesList.getChildren().isEmpty());
-        clearButton.setDisable(selectedPagesList.getChildren().isEmpty());
-        exportButton.setDisable(selectedPagesList.getChildren().isEmpty());
+        removeSelectedButton.setDisable(count == 0);
+        clearButton.setDisable(count == 0);
+        exportButton.setDisable(count == 0);
+    }
+
+    private String formatPageRanges(Set<Integer> pages) {
+        if (pages.isEmpty()) return "";
+
+        StringBuilder sb = new StringBuilder();
+        List<Integer> sorted = pages.stream().sorted().collect(Collectors.toList());
+
+        int rangeStart = sorted.get(0);
+        int rangeEnd = rangeStart;
+
+        for (int i = 1; i < sorted.size(); i++) {
+            int current = sorted.get(i);
+            if (current == rangeEnd + 1) {
+                rangeEnd = current;
+            } else {
+                // Output previous range
+                if (sb.length() > 0) sb.append(", ");
+                sb.append(rangeStart + 1);
+                if (rangeEnd > rangeStart) {
+                    sb.append("-").append(rangeEnd + 1);
+                }
+                rangeStart = current;
+                rangeEnd = current;
+            }
+        }
+
+        // Output last range
+        if (sb.length() > 0) sb.append(", ");
+        sb.append(rangeStart + 1);
+        if (rangeEnd > rangeStart) {
+            sb.append("-").append(rangeEnd + 1);
+        }
+
+        return sb.toString();
     }
 
     @FXML
@@ -763,27 +862,43 @@ public class PdfExtractorController {
         if (!pdfService.isDocumentLoaded()) return;
 
         logger.info("User selected all pages");
-        int pageCount = pdfService.getCurrentDocument().getPageCount();
-        selectedPages.addAll(java.util.stream.IntStream.range(0, pageCount).boxed().collect(Collectors.toSet()));
 
-        // Update all thumbnail checkboxes
-        for (PageThumbnailPanel panel : thumbnailPanels) {
-            panel.setSelected(true);
+        // Set flag to prevent individual checkbox callbacks from triggering updates
+        isBulkOperation = true;
+        try {
+            int pageCount = pdfService.getCurrentDocument().getPageCount();
+            selectedPages.addAll(java.util.stream.IntStream.range(0, pageCount).boxed().collect(Collectors.toSet()));
+
+            // Update all thumbnail checkboxes
+            for (PageThumbnailPanel panel : thumbnailPanels) {
+                panel.setSelected(true);
+            }
+        } finally {
+            isBulkOperation = false;
         }
 
+        // Single update at the end
         updateSelectedPagesList();
     }
 
     @FXML
     private void onDeselectAll() {
         logger.info("User deselected all pages");
-        selectedPages.clear();
 
-        // Update all thumbnail checkboxes
-        for (PageThumbnailPanel panel : thumbnailPanels) {
-            panel.setSelected(false);
+        // Set flag to prevent individual checkbox callbacks from triggering updates
+        isBulkOperation = true;
+        try {
+            selectedPages.clear();
+
+            // Update all thumbnail checkboxes
+            for (PageThumbnailPanel panel : thumbnailPanels) {
+                panel.setSelected(false);
+            }
+        } finally {
+            isBulkOperation = false;
         }
 
+        // Single update at the end
         updateSelectedPagesList();
     }
 

@@ -97,9 +97,49 @@ public class PdfJoinerController {
 
         setupImageOptionsComboBoxes();
         setupViewToggle();
+        setupWindowCloseHandler();
         updateUI();
 
         logger.debug("Controller initialization complete");
+    }
+
+    private void setupWindowCloseHandler() {
+        // Register cleanup when window is closed
+        Platform.runLater(() -> {
+            if (addFilesButton.getScene() != null && addFilesButton.getScene().getWindow() != null) {
+                addFilesButton.getScene().getWindow().setOnCloseRequest(event -> cleanup());
+            }
+        });
+    }
+
+    /**
+     * Clean up resources when the window is closed.
+     */
+    public void cleanup() {
+        logger.info("Cleaning up PdfJoinerController resources");
+
+        // Shut down the executor service
+        renderExecutor.shutdownNow();
+
+        // Close all loaded PDF documents
+        for (JoinerFile file : loadedFiles) {
+            try {
+                file.close();
+            } catch (Exception e) {
+                logger.error("Error closing file: {}", file.getFileName(), e);
+            }
+        }
+
+        // Clear all lists and caches
+        loadedFiles.clear();
+        sections.clear();
+        fileListItems.clear();
+        sectionListItems.clear();
+        fileListContainer.getChildren().clear();
+        sectionListContainer.getChildren().clear();
+        gridPreviewContainer.getChildren().clear();
+
+        logger.info("Cleanup complete");
     }
 
     private void setupImageOptionsComboBoxes() {

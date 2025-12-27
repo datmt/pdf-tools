@@ -83,3 +83,93 @@ BorderPane
 ### Add export functionality
 1. Export logic in `PdfService.extractPages()` and `extractByBookmarks()`
 2. UI in controller's `onExport()` and `onExportByBookmarks()`
+
+## Performance & Memory Guidelines
+
+### Resource Cleanup (CRITICAL)
+When creating new tools/controllers, ALWAYS implement cleanup:
+
+```java
+// In initialize()
+setupWindowCloseHandler();
+
+private void setupWindowCloseHandler() {
+    Platform.runLater(() -> {
+        if (someButton.getScene() != null && someButton.getScene().getWindow() != null) {
+            someButton.getScene().getWindow().setOnCloseRequest(event -> cleanup());
+        }
+    });
+}
+
+public void cleanup() {
+    renderExecutor.shutdownNow();       // Shutdown thread pools
+    pdfService.closeDocument();          // Close PDDocument
+    // Clear caches, lists, UI containers
+}
+```
+
+**Must clean up:**
+- `ExecutorService` - call `shutdownNow()`
+- `PDDocument` - call `close()` (via PdfService.closeDocument() or JoinerFile.close())
+- Image caches - clear lists
+- Timeline/animations - call `stop()`
+
+### Bulk Operations Pattern
+When updating many UI elements at once, use a flag to prevent N updates:
+
+```java
+private boolean isBulkOperation = false;
+
+private void onSelectAll() {
+    isBulkOperation = true;
+    try {
+        for (item : items) {
+            item.setSelected(true);  // This triggers listener
+        }
+    } finally {
+        isBulkOperation = false;
+    }
+    updateUI();  // Single update at end
+}
+
+private void onItemChanged() {
+    if (isBulkOperation) return;  // Skip during bulk
+    updateUI();
+}
+```
+
+### Large Collections in UI
+Don't create N UI nodes for large selections:
+
+```java
+if (count > 50) {
+    // Show summary: "4150 pages selected" + "1-4150"
+    Label summary = new Label(count + " pages selected");
+} else {
+    // Show individual items only for small counts
+    for (item : items) { ... }
+}
+```
+
+### PDF Page Import
+When copying pages between PDDocuments, use `importPage()` not `addPage()`:
+
+```java
+// WRONG - corrupts fonts/resources
+PDPage page = sourcePdf.getPage(i);
+outputDoc.addPage(page);
+
+// CORRECT - properly clones page with resources
+PDPage importedPage = outputDoc.importPage(page);
+```
+
+### Loading New Documents
+Always close previous document before loading new one:
+
+```java
+public PdfDocument loadPdf(File file) {
+    closeDocument();  // Close previous first
+    currentDocument = loader.loadPdf(file);
+    return currentDocument;
+}
+```
