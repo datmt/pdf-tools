@@ -19,6 +19,7 @@ public class MainScreenController {
     public Button joinerButton;
     public Button compressorButton;
     public Button securityButton;
+    public Button inserterButton;
 
     public void onExtractorClicked() {
         logger.info("User clicked PDF Extractor button");
@@ -97,6 +98,26 @@ public class MainScreenController {
             logger.info("PDF Security window opened");
         } catch (IOException e) {
             logger.error("Failed to load PDF Security window", e);
+        }
+    }
+
+    public void onInserterClicked() {
+        logger.info("User clicked PDF Bulk Inserter button");
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(
+                    getClass().getResource("/com/datmt/pdftools/ui/inserter/pdf-bulk-inserter.fxml"));
+            Scene scene = new Scene(fxmlLoader.load(), 1000, 700);
+
+            Stage stage = new Stage();
+            stage.setTitle("PDF Bulk Inserter");
+            stage.setScene(scene);
+            stage.setMinWidth(900);
+            stage.setMinHeight(600);
+            stage.show();
+
+            logger.info("PDF Bulk Inserter window opened");
+        } catch (IOException e) {
+            logger.error("Failed to load PDF Bulk Inserter window", e);
         }
     }
 }

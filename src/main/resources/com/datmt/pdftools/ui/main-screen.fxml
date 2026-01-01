@@ -34,6 +34,12 @@
                         style="-fx-font-size: 14; -fx-padding: 15 40; -fx-min-width: 200;"
                         onAction="#onSecurityClicked"/>
             </HBox>
+
+            <HBox spacing="20" alignment="CENTER">
+                <Button fx:id="inserterButton" text="PDF Bulk Inserter"
+                        style="-fx-font-size: 14; -fx-padding: 15 40; -fx-min-width: 200;"
+                        onAction="#onInserterClicked"/>
+            </HBox>
         </VBox>
     </center>
 </BorderPane>
