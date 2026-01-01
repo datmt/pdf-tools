@@ -29,6 +29,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 
+import com.datmt.pdftools.util.CreditLinkHandler;
+
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -105,6 +107,8 @@ public class PdfExtractorController {
     private Button browseDirButton, exportBookmarksButton;
     @FXML
     private Button rotateLeftButton, rotateRightButton;
+    @FXML
+    private Hyperlink creditLink;
     private PdfService pdfService;
     private Set<Integer> selectedPages;
     private List<PageThumbnailPanel> thumbnailPanels;
@@ -134,6 +138,7 @@ public class PdfExtractorController {
         thumbnailPanels = new ArrayList<>();
         currentBookmarks = new ArrayList<>();
         currentPreviewPage = 0;
+        CreditLinkHandler.setup(creditLink);
 
         setupEventHandlers();
         setupBookmarkTreeView();

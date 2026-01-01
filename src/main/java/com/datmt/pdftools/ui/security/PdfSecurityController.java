@@ -12,6 +12,8 @@ import javafx.stage.FileChooser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.datmt.pdftools.util.CreditLinkHandler;
+
 import java.io.File;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -54,6 +56,7 @@ public class PdfSecurityController {
     // Result section
     @FXML private HBox resultSection;
     @FXML private Label resultLabel;
+    @FXML private Hyperlink creditLink;
 
     private File selectedFile;
     private boolean isEncrypted = false;
@@ -66,6 +69,7 @@ public class PdfSecurityController {
         logger.info("Initializing PDF Security");
         setupWindowCloseHandler();
         setupListeners();
+        CreditLinkHandler.setup(creditLink);
         updateUI();
     }
 

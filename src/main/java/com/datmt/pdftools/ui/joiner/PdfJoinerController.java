@@ -22,6 +22,8 @@ import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.datmt.pdftools.util.CreditLinkHandler;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,6 +79,7 @@ public class PdfJoinerController {
     // Output
     @FXML private TextField outputFileField;
     @FXML private Button browseButton;
+    @FXML private Hyperlink creditLink;
 
     // State
     private final PdfMergeService mergeService = new PdfMergeService();
@@ -98,6 +101,7 @@ public class PdfJoinerController {
         setupImageOptionsComboBoxes();
         setupViewToggle();
         setupWindowCloseHandler();
+        CreditLinkHandler.setup(creditLink);
         updateUI();
 
         logger.debug("Controller initialization complete");

@@ -15,6 +15,8 @@ import javafx.stage.FileChooser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.datmt.pdftools.util.CreditLinkHandler;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,6 +60,7 @@ public class PdfCompressorController {
     @FXML private Label totalOriginalLabel;
     @FXML private Label totalCompressedLabel;
     @FXML private Label totalSavingsLabel;
+    @FXML private Hyperlink creditLink;
 
     private final List<FileItem> fileItems = new ArrayList<>();
     private FileItem selectedFileItem = null;
@@ -70,6 +73,7 @@ public class PdfCompressorController {
         logger.info("Initializing PDF Compressor");
         setupWindowCloseHandler();
         setupListeners();
+        CreditLinkHandler.setup(creditLink);
         updateUI();
     }
 

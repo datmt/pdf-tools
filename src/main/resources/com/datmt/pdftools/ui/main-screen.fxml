@@ -5,6 +5,8 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Text?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Hyperlink?>
 <BorderPane xmlns:fx="http://javafx.com/fxml"
             xmlns="http://javafx.com/javafx"
             fx:controller="com.datmt.pdftools.ui.controller.MainScreenController"
@@ -42,4 +44,11 @@
             </HBox>
         </VBox>
     </center>
+
+    <bottom>
+        <HBox alignment="CENTER" style="-fx-padding: 12; -fx-background-color: #f5f5f5; -fx-border-color: #e0e0e0; -fx-border-width: 1 0 0 0;">
+            <Label text="Discover more awesome tools at " style="-fx-font-size: 12; -fx-text-fill: #666666;"/>
+            <Hyperlink fx:id="creditLink" text="tools.datmt.com" style="-fx-font-size: 12;"/>
+        </HBox>
+    </bottom>
 </BorderPane>

@@ -140,4 +140,11 @@
 
         </HBox>
     </center>
+
+    <bottom>
+        <HBox alignment="CENTER" style="-fx-padding: 8; -fx-background-color: #f5f5f5; -fx-border-color: #e0e0e0; -fx-border-width: 1 0 0 0;">
+            <Label text="Discover more awesome tools at " style="-fx-font-size: 11; -fx-text-fill: #666666;"/>
+            <Hyperlink fx:id="creditLink" text="tools.datmt.com" style="-fx-font-size: 11;"/>
+        </HBox>
+    </bottom>
 </BorderPane>

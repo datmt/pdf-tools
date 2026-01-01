@@ -19,6 +19,8 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.datmt.pdftools.util.CreditLinkHandler;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -84,6 +86,7 @@ public class PdfBulkInserterController {
     @FXML private Label totalSuccessLabel;
     @FXML private Label totalFailedLabel;
     @FXML private Label totalInsertionsLabel;
+    @FXML private Hyperlink creditLink;
 
     // State
     private File sourceFile;
@@ -101,6 +104,7 @@ public class PdfBulkInserterController {
         setupWindowCloseHandler();
         setupListeners();
         setupComboBoxes();
+        CreditLinkHandler.setup(creditLink);
         updateUI();
     }
 

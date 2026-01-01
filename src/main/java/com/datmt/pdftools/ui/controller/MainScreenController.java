@@ -1,8 +1,11 @@
 package com.datmt.pdftools.ui.controller;
 
+import com.datmt.pdftools.util.CreditLinkHandler;
+import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Hyperlink;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +23,13 @@ public class MainScreenController {
     public Button compressorButton;
     public Button securityButton;
     public Button inserterButton;
+    @FXML
+    private Hyperlink creditLink;
+
+    @FXML
+    public void initialize() {
+        CreditLinkHandler.setup(creditLink);
+    }
 
     public void onExtractorClicked() {
         logger.info("User clicked PDF Extractor button");
