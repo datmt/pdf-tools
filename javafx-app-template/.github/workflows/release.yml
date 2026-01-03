@@ -1,0 +1,345 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  APP_NAME: __ARTIFACT_ID__
+  MAIN_CLASS: __PACKAGE_NAME__.Launcher
+  JAR_NAME: __ARTIFACT_ID__-1.0-SNAPSHOT.jar
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+
+      - name: Prepare staging directory
+        run: |
+          mkdir -p staging
+          cp target/${{ env.JAR_NAME }} staging/
+
+      - name: Create runtime image with jlink
+        run: |
+          mvn dependency:copy-dependencies -DincludeGroupIds=org.openjfx -DoutputDirectory=target/javafx-mods
+
+          $JAVA_HOME/bin/jlink \
+            --module-path "$JAVA_HOME/jmods:target/javafx-mods" \
+            --add-modules java.base,java.desktop,java.logging,java.naming,java.sql,java.xml,javafx.controls,javafx.fxml,javafx.graphics,javafx.base \
+            --output target/runtime \
+            --strip-debug \
+            --compress zip-6 \
+            --no-header-files \
+            --no-man-pages
+
+      - name: Create application with jpackage
+        run: |
+          $JAVA_HOME/bin/jpackage \
+            --type app-image \
+            --name "${{ env.APP_NAME }}" \
+            --input staging \
+            --main-jar ${{ env.JAR_NAME }} \
+            --main-class ${{ env.MAIN_CLASS }} \
+            --runtime-image target/runtime \
+            --dest dist \
+            --vendor "__VENDOR__" \
+            --app-version "${GITHUB_REF_NAME#v}" \
+            --description "__DESCRIPTION__"
+
+      - name: Create AppImage
+        run: |
+          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool-x86_64.AppImage
+          ./appimagetool-x86_64.AppImage --appimage-extract
+          mv squashfs-root appimagetool
+
+          mkdir -p AppDir/usr/bin
+          mkdir -p AppDir/usr/share/applications
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+
+          cp -r dist/${{ env.APP_NAME }}/* AppDir/usr/bin/
+
+          cat > AppDir/${{ env.APP_NAME }}.desktop << EOF
+          [Desktop Entry]
+          Type=Application
+          Name=__PROJECT_NAME__
+          Exec=AppRun
+          Icon=${{ env.APP_NAME }}
+          Categories=Utility;
+          Comment=__DESCRIPTION__
+          EOF
+
+          # Create simple icon if none exists
+          sudo apt-get install -y imagemagick
+          convert -size 256x256 xc:'#2196F3' -fill white -gravity center \
+                  -pointsize 72 -annotate 0 'APP' \
+                  AppDir/usr/share/icons/hicolor/256x256/apps/${{ env.APP_NAME }}.png
+          ln -sf usr/share/icons/hicolor/256x256/apps/${{ env.APP_NAME }}.png AppDir/${{ env.APP_NAME }}.png
+
+          cat > AppDir/AppRun << 'APPRUN'
+          #!/bin/bash
+          SELF=$(readlink -f "$0")
+          HERE=${SELF%/*}
+          export PATH="${HERE}/usr/bin/bin:${PATH}"
+          export LD_LIBRARY_PATH="${HERE}/usr/bin/lib:${LD_LIBRARY_PATH}"
+          exec "${HERE}/usr/bin/bin/__ARTIFACT_ID__" "$@"
+          APPRUN
+          chmod +x AppDir/AppRun
+
+          ARCH=x86_64 ./appimagetool/AppRun AppDir ${{ env.APP_NAME }}-linux-x86_64.AppImage
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: ${{ env.APP_NAME }}-linux-x86_64.AppImage
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+
+      - name: Prepare staging directory
+        run: |
+          mkdir -p staging
+          cp target/${{ env.JAR_NAME }} staging/
+
+      - name: Create runtime image with jlink
+        run: |
+          mvn dependency:copy-dependencies -DincludeGroupIds=org.openjfx -DoutputDirectory=target/javafx-mods
+
+          $JAVA_HOME/bin/jlink \
+            --module-path "$JAVA_HOME/jmods:target/javafx-mods" \
+            --add-modules java.base,java.desktop,java.logging,java.naming,java.sql,java.xml,javafx.controls,javafx.fxml,javafx.graphics,javafx.base \
+            --output target/runtime \
+            --strip-debug \
+            --compress zip-6 \
+            --no-header-files \
+            --no-man-pages
+
+      - name: Create macOS app bundle with jpackage
+        run: |
+          $JAVA_HOME/bin/jpackage \
+            --type app-image \
+            --name "__PROJECT_NAME__" \
+            --input staging \
+            --main-jar ${{ env.JAR_NAME }} \
+            --main-class ${{ env.MAIN_CLASS }} \
+            --runtime-image target/runtime \
+            --dest dist \
+            --vendor "__VENDOR__" \
+            --app-version "${GITHUB_REF_NAME#v}" \
+            --description "__DESCRIPTION__" \
+            --mac-package-name "__PROJECT_NAME__"
+
+      - name: Create DMG
+        run: |
+          hdiutil create -volname "__PROJECT_NAME__" -srcfolder "dist/__PROJECT_NAME__.app" -ov -format UDZO "${{ env.APP_NAME }}-macos-x86_64.dmg"
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: ${{ env.APP_NAME }}-macos-x86_64.dmg
+
+  build-macos-arm:
+    runs-on: macos-14
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+
+      - name: Prepare staging directory
+        run: |
+          mkdir -p staging
+          cp target/${{ env.JAR_NAME }} staging/
+
+      - name: Create runtime image with jlink
+        run: |
+          mvn dependency:copy-dependencies -DincludeGroupIds=org.openjfx -DoutputDirectory=target/javafx-mods
+
+          $JAVA_HOME/bin/jlink \
+            --module-path "$JAVA_HOME/jmods:target/javafx-mods" \
+            --add-modules java.base,java.desktop,java.logging,java.naming,java.sql,java.xml,javafx.controls,javafx.fxml,javafx.graphics,javafx.base \
+            --output target/runtime \
+            --strip-debug \
+            --compress zip-6 \
+            --no-header-files \
+            --no-man-pages
+
+      - name: Create macOS app bundle with jpackage
+        run: |
+          $JAVA_HOME/bin/jpackage \
+            --type app-image \
+            --name "__PROJECT_NAME__" \
+            --input staging \
+            --main-jar ${{ env.JAR_NAME }} \
+            --main-class ${{ env.MAIN_CLASS }} \
+            --runtime-image target/runtime \
+            --dest dist \
+            --vendor "__VENDOR__" \
+            --app-version "${GITHUB_REF_NAME#v}" \
+            --description "__DESCRIPTION__" \
+            --mac-package-name "__PROJECT_NAME__"
+
+      - name: Create DMG
+        run: |
+          hdiutil create -volname "__PROJECT_NAME__" -srcfolder "dist/__PROJECT_NAME__.app" -ov -format UDZO "${{ env.APP_NAME }}-macos-aarch64.dmg"
+
+      - name: Upload macOS ARM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm-dmg
+          path: ${{ env.APP_NAME }}-macos-aarch64.dmg
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+
+      - name: Prepare staging directory
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path staging
+          Copy-Item "target/${{ env.JAR_NAME }}" -Destination staging/
+
+      - name: Create runtime image with jlink
+        shell: pwsh
+        run: |
+          mvn dependency:copy-dependencies "-DincludeGroupIds=org.openjfx" "-DoutputDirectory=target/javafx-mods"
+
+          & "$env:JAVA_HOME\bin\jlink.exe" `
+            --module-path "$env:JAVA_HOME\jmods;target\javafx-mods" `
+            --add-modules java.base,java.desktop,java.logging,java.naming,java.sql,java.xml,javafx.controls,javafx.fxml,javafx.graphics,javafx.base `
+            --output target/runtime `
+            --strip-debug `
+            --compress zip-6 `
+            --no-header-files `
+            --no-man-pages
+
+      - name: Create Windows app with jpackage
+        shell: pwsh
+        run: |
+          $version = "$env:GITHUB_REF_NAME" -replace '^v', ''
+          & "$env:JAVA_HOME\bin\jpackage.exe" `
+            --type app-image `
+            --name "__PROJECT_NAME__" `
+            --input staging `
+            --main-jar "${{ env.JAR_NAME }}" `
+            --main-class "${{ env.MAIN_CLASS }}" `
+            --runtime-image target/runtime `
+            --dest dist `
+            --vendor "__VENDOR__" `
+            --app-version "$version" `
+            --description "__DESCRIPTION__"
+
+      - name: Create ZIP archive
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "dist\__PROJECT_NAME__" -DestinationPath "${{ env.APP_NAME }}-windows-x86_64.zip"
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-zip
+          path: ${{ env.APP_NAME }}-windows-x86_64.zip
+
+  release:
+    needs: [build-linux, build-macos, build-macos-arm, build-windows]
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -laR artifacts/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/linux-appimage/*.AppImage
+            artifacts/macos-dmg/*.dmg
+            artifacts/macos-arm-dmg/*.dmg
+            artifacts/windows-zip/*.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+
+      - name: Upload to Cloudflare R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+        run: |
+          aws --version
+
+          aws s3 sync artifacts/linux-appimage/ s3://${{ secrets.R2_BUCKET_NAME }}/__ARTIFACT_ID__/ \
+            --endpoint-url "$R2_ENDPOINT" \
+            --exclude "*" --include "*.AppImage"
+
+          aws s3 sync artifacts/macos-dmg/ s3://${{ secrets.R2_BUCKET_NAME }}/__ARTIFACT_ID__/ \
+            --endpoint-url "$R2_ENDPOINT" \
+            --exclude "*" --include "*.dmg"
+
+          aws s3 sync artifacts/macos-arm-dmg/ s3://${{ secrets.R2_BUCKET_NAME }}/__ARTIFACT_ID__/ \
+            --endpoint-url "$R2_ENDPOINT" \
+            --exclude "*" --include "*.dmg"
+
+          aws s3 sync artifacts/windows-zip/ s3://${{ secrets.R2_BUCKET_NAME }}/__ARTIFACT_ID__/ \
+            --endpoint-url "$R2_ENDPOINT" \
+            --exclude "*" --include "*.zip"
+
+          echo "Uploaded files to R2:"
+          aws s3 ls s3://${{ secrets.R2_BUCKET_NAME }}/__ARTIFACT_ID__/ --endpoint-url "$R2_ENDPOINT"
