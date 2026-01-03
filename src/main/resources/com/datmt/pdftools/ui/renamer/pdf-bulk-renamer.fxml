@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.control.cell.PropertyValueFactory?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+            xmlns="http://javafx.com/javafx"
+            fx:controller="com.datmt.pdftools.ui.renamer.PdfBulkRenamerController"
+            style="-fx-font-family: 'Segoe UI';">
+
+    <!-- Top Toolbar -->
+    <top>
+        <ToolBar style="-fx-background-color: #f0f0f0; -fx-padding: 8;">
+            <Button fx:id="addFilesButton" text="Add Files" onAction="#onAddFiles"
+                    style="-fx-font-size: 13;"/>
+            <Button fx:id="addFolderButton" text="Add Folder" onAction="#onAddFolder"
+                    style="-fx-font-size: 13;"/>
+            <CheckBox fx:id="includeSubfoldersCheck" text="Include subfolders"
+                      style="-fx-font-size: 12;"/>
+            <Separator orientation="VERTICAL"/>
+            <Button fx:id="removeSelectedButton" text="Remove Selected" onAction="#onRemoveSelected"
+                    style="-fx-font-size: 13;" disable="true"/>
+            <Button fx:id="clearAllButton" text="Clear All" onAction="#onClearAll"
+                    style="-fx-font-size: 13;" disable="true"/>
+            <Pane HBox.hgrow="ALWAYS"/>
+            <Label fx:id="statusLabel" text="No files loaded"
+                   style="-fx-font-size: 13; -fx-text-fill: #666666;"/>
+        </ToolBar>
+    </top>
+
+    <!-- Main Content -->
+    <center>
+        <VBox spacing="15" style="-fx-padding: 20;">
+
+            <!-- File Table -->
+            <TableView fx:id="fileTable" VBox.vgrow="ALWAYS"
+                       style="-fx-border-color: #cccccc; -fx-border-radius: 4;">
+                <columns>
+                    <TableColumn fx:id="selectColumn" text="" prefWidth="40" sortable="false">
+                        <!-- CheckBox for selection -->
+                    </TableColumn>
+                    <TableColumn fx:id="originalNameColumn" text="Original Filename" prefWidth="250">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="originalFilename"/>
+                        </cellValueFactory>
+                    </TableColumn>
+                    <TableColumn fx:id="extractedTitleColumn" text="Extracted Title" prefWidth="300">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="extractedTitle"/>
+                        </cellValueFactory>
+                    </TableColumn>
+                    <TableColumn fx:id="newFilenameColumn" text="New Filename" prefWidth="300">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="newFilename"/>
+                        </cellValueFactory>
+                    </TableColumn>
+                    <TableColumn fx:id="statusColumn" text="Status" prefWidth="100">
+                        <cellValueFactory>
+                            <PropertyValueFactory property="status"/>
+                        </cellValueFactory>
+                    </TableColumn>
+                </columns>
+                <placeholder>
+                    <Label text="No PDF files added. Click 'Add Files' or 'Add Folder' to begin."
+                           style="-fx-font-size: 14; -fx-text-fill: #888888;"/>
+                </placeholder>
+            </TableView>
+
+            <!-- Action Bar -->
+            <HBox spacing="15" alignment="CENTER_LEFT">
+                <!-- Progress Section -->
+                <HBox fx:id="progressSection" spacing="10" alignment="CENTER_LEFT" visible="false" managed="false">
+                    <ProgressBar fx:id="progressBar" progress="0" prefWidth="200"/>
+                    <Label fx:id="progressLabel" text=""
+                           style="-fx-font-size: 12; -fx-text-fill: #666666;"/>
+                </HBox>
+
+                <Pane HBox.hgrow="ALWAYS"/>
+
+                <!-- Statistics -->
+                <Label fx:id="statsLabel" text="0 files | 0 ready to rename"
+                       style="-fx-font-size: 13; -fx-text-fill: #666666;"/>
+
+                <Separator orientation="VERTICAL"/>
+
+                <!-- Action Buttons -->
+                <Button fx:id="scanButton" text="Scan Titles" onAction="#onScanTitles"
+                        style="-fx-font-size: 14; -fx-padding: 8 20; -fx-background-color: #2196F3; -fx-text-fill: white;"
+                        disable="true"/>
+                <Button fx:id="renameButton" text="Rename All" onAction="#onRenameAll"
+                        style="-fx-font-size: 14; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-color: #4CAF50; -fx-text-fill: white;"
+                        disable="true"/>
+            </HBox>
+
+            <!-- Results Summary -->
+            <HBox fx:id="resultsSection" spacing="20" alignment="CENTER_LEFT" visible="false" managed="false"
+                  style="-fx-padding: 15; -fx-background-color: #e8f5e9; -fx-border-color: #4CAF50; -fx-border-radius: 4;">
+                <Label fx:id="resultsLabel" text=""
+                       style="-fx-font-size: 14; -fx-font-weight: bold; -fx-text-fill: #2e7d32;"/>
+            </HBox>
+        </VBox>
+    </center>
+
+    <bottom>
+        <HBox alignment="CENTER" style="-fx-padding: 8; -fx-background-color: #f5f5f5; -fx-border-color: #e0e0e0; -fx-border-width: 1 0 0 0;">
+            <Label text="Discover more awesome tools at " style="-fx-font-size: 11; -fx-text-fill: #666666;"/>
+            <Hyperlink fx:id="creditLink" text="tools.datmt.com" style="-fx-font-size: 11;"/>
+        </HBox>
+    </bottom>
+</BorderPane>

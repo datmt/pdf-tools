@@ -41,6 +41,10 @@
                 <Button fx:id="inserterButton" text="PDF Bulk Inserter"
                         style="-fx-font-size: 14; -fx-padding: 15 40; -fx-min-width: 200;"
                         onAction="#onInserterClicked"/>
+
+                <Button fx:id="renamerButton" text="PDF Bulk Renamer"
+                        style="-fx-font-size: 14; -fx-padding: 15 40; -fx-min-width: 200;"
+                        onAction="#onRenamerClicked"/>
             </HBox>
         </VBox>
     </center>

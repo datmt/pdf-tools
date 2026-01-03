@@ -23,6 +23,7 @@ public class MainScreenController {
     public Button compressorButton;
     public Button securityButton;
     public Button inserterButton;
+    public Button renamerButton;
     @FXML
     private Hyperlink creditLink;
 
@@ -128,6 +129,26 @@ public class MainScreenController {
             logger.info("PDF Bulk Inserter window opened");
         } catch (IOException e) {
             logger.error("Failed to load PDF Bulk Inserter window", e);
+        }
+    }
+
+    public void onRenamerClicked() {
+        logger.info("User clicked PDF Bulk Renamer button");
+        try {
+            FXMLLoader fxmlLoader = new FXMLLoader(
+                    getClass().getResource("/com/datmt/pdftools/ui/renamer/pdf-bulk-renamer.fxml"));
+            Scene scene = new Scene(fxmlLoader.load(), 1100, 700);
+
+            Stage stage = new Stage();
+            stage.setTitle("PDF Bulk Renamer");
+            stage.setScene(scene);
+            stage.setMinWidth(1000);
+            stage.setMinHeight(600);
+            stage.show();
+
+            logger.info("PDF Bulk Renamer window opened");
+        } catch (IOException e) {
+            logger.error("Failed to load PDF Bulk Renamer window", e);
         }
     }
 }
