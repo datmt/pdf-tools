@@ -3,6 +3,7 @@ package com.datmt.pdftools.ui.renamer;
 import com.datmt.pdftools.model.RenameItem;
 import com.datmt.pdftools.model.RenameItem.RenameStatus;
 import com.datmt.pdftools.service.PdfTitleExtractor;
+import com.datmt.pdftools.service.PdfTitleExtractor.NormalizationOptions;
 import com.datmt.pdftools.util.CreditLinkHandler;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -48,6 +49,10 @@ public class PdfBulkRenamerController {
     @FXML private TableColumn<RenameItem, String> extractedTitleColumn;
     @FXML private TableColumn<RenameItem, String> newFilenameColumn;
     @FXML private TableColumn<RenameItem, RenameStatus> statusColumn;
+
+    @FXML private CheckBox replaceSpacesCheck;
+    @FXML private CheckBox normalizeAsciiCheck;
+    @FXML private CheckBox lowercaseCheck;
 
     @FXML private HBox progressSection;
     @FXML private ProgressBar progressBar;
@@ -274,6 +279,16 @@ public class PdfBulkRenamerController {
         updateUI();
     }
 
+    /**
+     * Build normalization options from the UI checkboxes.
+     */
+    private NormalizationOptions buildNormalizationOptions() {
+        return new NormalizationOptions()
+                .setReplaceSpacesWithHyphens(replaceSpacesCheck.isSelected())
+                .setNormalizeToAscii(normalizeAsciiCheck.isSelected())
+                .setLowercase(lowercaseCheck.isSelected());
+    }
+
     @FXML
     private void onScanTitles() {
         if (items.isEmpty() || isProcessing) {
@@ -290,6 +305,9 @@ public class PdfBulkRenamerController {
         List<RenameItem> itemsToScan = new ArrayList<>(items);
         int total = itemsToScan.size();
 
+        // Capture normalization options from UI thread
+        NormalizationOptions options = buildNormalizationOptions();
+
         executor.submit(() -> {
             for (int i = 0; i < total; i++) {
                 RenameItem item = itemsToScan.get(i);
@@ -305,7 +323,7 @@ public class PdfBulkRenamerController {
                 String title = titleExtractor.extractTitle(item.getOriginalFile());
 
                 if (title != null && !title.isBlank()) {
-                    String filename = titleExtractor.generateFilename(title);
+                    String filename = titleExtractor.generateFilename(title, options);
                     String uniqueFilename = titleExtractor.generateUniqueFilename(
                             item.getOriginalFile().getParentFile(), filename);
 

@@ -316,3 +316,34 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+
+      - name: Upload to Cloudflare R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+        run: |
+          # Install AWS CLI (already available on ubuntu-latest, but ensure it's there)
+          aws --version
+
+          # Upload all artifacts to R2 bucket under pdf-tools/ folder
+          # Using --delete to remove old files and keep only latest version
+          aws s3 sync artifacts/linux-appimage/ s3://${{ secrets.R2_BUCKET_NAME }}/pdf-tools/ \
+            --endpoint-url "$R2_ENDPOINT" \
+            --exclude "*" --include "*.AppImage"
+
+          aws s3 sync artifacts/macos-dmg/ s3://${{ secrets.R2_BUCKET_NAME }}/pdf-tools/ \
+            --endpoint-url "$R2_ENDPOINT" \
+            --exclude "*" --include "*.dmg"
+
+          aws s3 sync artifacts/macos-arm-dmg/ s3://${{ secrets.R2_BUCKET_NAME }}/pdf-tools/ \
+            --endpoint-url "$R2_ENDPOINT" \
+            --exclude "*" --include "*.dmg"
+
+          aws s3 sync artifacts/windows-zip/ s3://${{ secrets.R2_BUCKET_NAME }}/pdf-tools/ \
+            --endpoint-url "$R2_ENDPOINT" \
+            --exclude "*" --include "*.zip"
+
+          echo "Uploaded files to R2:"
+          aws s3 ls s3://${{ secrets.R2_BUCKET_NAME }}/pdf-tools/ --endpoint-url "$R2_ENDPOINT"

@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.Normalizer;
 import java.util.regex.Pattern;
 
 /**
@@ -25,6 +26,10 @@ public class PdfTitleExtractor {
     private static final Pattern MULTIPLE_SPACES = Pattern.compile("\\s+");
     // Control characters
     private static final Pattern CONTROL_CHARS = Pattern.compile("[\\x00-\\x1f\\x7f]");
+    // Non-ASCII characters (for normalization)
+    private static final Pattern NON_ASCII = Pattern.compile("[^\\x00-\\x7F]");
+    // Multiple hyphens
+    private static final Pattern MULTIPLE_HYPHENS = Pattern.compile("-+");
 
     private static final int MAX_FILENAME_LENGTH = 200;
     private static final int MAX_FIRST_PAGE_CHARS = 500;
@@ -308,17 +313,152 @@ public class PdfTitleExtractor {
     }
 
     /**
+     * Options for filename normalization.
+     */
+    public static class NormalizationOptions {
+        private boolean replaceSpacesWithHyphens = false;
+        private boolean normalizeToAscii = false;
+        private boolean lowercase = false;
+
+        public NormalizationOptions() {
+        }
+
+        public boolean isReplaceSpacesWithHyphens() {
+            return replaceSpacesWithHyphens;
+        }
+
+        public NormalizationOptions setReplaceSpacesWithHyphens(boolean replaceSpacesWithHyphens) {
+            this.replaceSpacesWithHyphens = replaceSpacesWithHyphens;
+            return this;
+        }
+
+        public boolean isNormalizeToAscii() {
+            return normalizeToAscii;
+        }
+
+        public NormalizationOptions setNormalizeToAscii(boolean normalizeToAscii) {
+            this.normalizeToAscii = normalizeToAscii;
+            return this;
+        }
+
+        public boolean isLowercase() {
+            return lowercase;
+        }
+
+        public NormalizationOptions setLowercase(boolean lowercase) {
+            this.lowercase = lowercase;
+            return this;
+        }
+    }
+
+    /**
+     * Normalize a filename according to the given options.
+     *
+     * @param filename the filename to normalize (without extension)
+     * @param options  normalization options
+     * @return normalized filename
+     */
+    public String normalizeFilename(String filename, NormalizationOptions options) {
+        if (filename == null || options == null) {
+            return filename;
+        }
+
+        String result = filename;
+
+        // Normalize to ASCII (remove accents/diacritics)
+        if (options.isNormalizeToAscii()) {
+            result = normalizeToAscii(result);
+        }
+
+        // Replace spaces with hyphens
+        if (options.isReplaceSpacesWithHyphens()) {
+            result = result.replace(' ', '-');
+            // Clean up multiple hyphens
+            result = MULTIPLE_HYPHENS.matcher(result).replaceAll("-");
+            // Remove leading/trailing hyphens
+            result = result.replaceAll("^-+|-+$", "");
+        }
+
+        // Convert to lowercase
+        if (options.isLowercase()) {
+            result = result.toLowerCase();
+        }
+
+        return result;
+    }
+
+    /**
+     * Normalize a string to ASCII by removing diacritics/accents.
+     * For example: "café" -> "cafe", "naïve" -> "naive"
+     *
+     * @param input the input string
+     * @return ASCII-normalized string
+     */
+    private String normalizeToAscii(String input) {
+        if (input == null) {
+            return null;
+        }
+
+        // Decompose accented characters (e.g., é -> e + ́)
+        String normalized = Normalizer.normalize(input, Normalizer.Form.NFD);
+
+        // Remove combining diacritical marks
+        normalized = normalized.replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+
+        // Replace common non-ASCII characters that aren't handled by NFD
+        normalized = normalized
+                .replace("ß", "ss")
+                .replace("æ", "ae")
+                .replace("Æ", "AE")
+                .replace("œ", "oe")
+                .replace("Œ", "OE")
+                .replace("ø", "o")
+                .replace("Ø", "O")
+                .replace("đ", "d")
+                .replace("Đ", "D")
+                .replace("ł", "l")
+                .replace("Ł", "L")
+                .replace("ñ", "n")
+                .replace("Ñ", "N");
+
+        // Remove any remaining non-ASCII characters
+        normalized = NON_ASCII.matcher(normalized).replaceAll("");
+
+        return normalized;
+    }
+
+    /**
      * Generate a safe filename from title.
      *
      * @param title extracted title
      * @return filename with .pdf extension
      */
     public String generateFilename(String title) {
+        return generateFilename(title, null);
+    }
+
+    /**
+     * Generate a safe filename from title with normalization options.
+     *
+     * @param title   extracted title
+     * @param options normalization options (can be null)
+     * @return filename with .pdf extension
+     */
+    public String generateFilename(String title, NormalizationOptions options) {
         if (title == null || title.isBlank()) {
             return null;
         }
 
         String filename = cleanTitle(title);
+        if (filename == null || filename.isBlank()) {
+            return null;
+        }
+
+        // Apply normalization if options provided
+        if (options != null) {
+            filename = normalizeFilename(filename, options);
+        }
+
         if (filename == null || filename.isBlank()) {
             return null;
         }

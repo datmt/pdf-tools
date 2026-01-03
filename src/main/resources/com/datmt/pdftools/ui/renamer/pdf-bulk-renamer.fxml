@@ -68,6 +68,18 @@
                 </placeholder>
             </TableView>
 
+            <!-- Normalization Options -->
+            <HBox spacing="20" alignment="CENTER_LEFT"
+                  style="-fx-padding: 10 15; -fx-background-color: #f5f5f5; -fx-border-color: #e0e0e0; -fx-border-radius: 4;">
+                <Label text="Filename options:" style="-fx-font-size: 13; -fx-font-weight: bold;"/>
+                <CheckBox fx:id="replaceSpacesCheck" text="Replace spaces with hyphens"
+                          style="-fx-font-size: 12;"/>
+                <CheckBox fx:id="normalizeAsciiCheck" text="Normalize to ASCII (remove accents)"
+                          style="-fx-font-size: 12;"/>
+                <CheckBox fx:id="lowercaseCheck" text="Lowercase"
+                          style="-fx-font-size: 12;"/>
+            </HBox>
+
             <!-- Action Bar -->
             <HBox spacing="15" alignment="CENTER_LEFT">
                 <!-- Progress Section -->
